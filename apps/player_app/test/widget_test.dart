@@ -1,9 +1,11 @@
 import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mpv_play/main.dart';
+import 'package:mpv_play/app/mpv_play_app.dart';
+import 'package:mpv_play/features/now_playing/application/playback_providers.dart';
 import 'package:playback_protocol/playback_protocol.dart';
 import 'package:playback_runtime/playback_runtime.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final class TestClient implements PlaybackClient {
   final controller = StreamController<PlaybackSnapshot>.broadcast();
@@ -37,14 +39,14 @@ void main() {
       ProviderScope(
         overrides: [
           clientProvider.overrideWithValue(client),
-          initialProvider.overrideWithValue(snapshot),
+          initialSnapshotProvider.overrideWithValue(snapshot),
         ],
         child: const MpvPlayApp(),
       ),
     );
     expect(find.text('MpvPlay'), findsOneWidget);
-    expect(find.text('选择音乐'), findsOneWidget);
-    expect(find.text('队列为空'), findsOneWidget);
+    expect(find.text('Choose music'), findsOneWidget);
+    expect(find.text('Queue is empty'), findsOneWidget);
     await client.dispose();
   });
 }

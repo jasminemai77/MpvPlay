@@ -1,4 +1,3 @@
-﻿
 # Flutter / Dart generated files
 .dart_tool/
 **/.dart_tool/
@@ -17,7 +16,7 @@
 
 # Local runtime data
 **/logs/
-**/logs/*.jsonl
+**/*.jsonl
 **/session.json
 
 # Local secrets and signing material
@@ -28,9 +27,12 @@
 *.pem
 *.key
 
-
-
-
-
 # Local repository bootstrap helpers
 create_and_push_mpvplay*.ps1
+
+# Optional locally generated compressed test media (WAV fixtures are committed)
+test_media/generated/tone.mp3
+test_media/generated/tone.flac
+test_media/generated/tone.m4a
+test_media/generated/tone.ogg
+test_media/generated/tone.opus

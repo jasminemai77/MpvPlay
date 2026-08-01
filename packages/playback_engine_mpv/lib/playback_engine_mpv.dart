@@ -1,3 +1,6 @@
+// Public argument names intentionally differ from private fields.
+// ignore_for_file: prefer_initializing_formals
+
 import 'dart:async';
 import 'dart:io';
 
@@ -5,7 +8,20 @@ import 'package:media_kit/media_kit.dart';
 import 'package:playback_engine_api/playback_engine_api.dart';
 import 'package:player_core/player_core.dart';
 
+/// Adapter-local configuration. It intentionally does not cross the engine API.
+final class MpvEngineConfiguration {
+  const MpvEngineConfiguration({this.enableAudioOutput = true});
+
+  /// Tests use mpv's null audio driver so CI never depends on a sound device.
+  final bool enableAudioOutput;
+}
+
 final class MpvPlaybackEngine implements PlaybackEngine {
+  MpvPlaybackEngine({
+    MpvEngineConfiguration configuration = const MpvEngineConfiguration(),
+  }) : _configuration = configuration;
+
+  final MpvEngineConfiguration _configuration;
   final _events = StreamController<EngineEvent>.broadcast();
   final _subscriptions = <StreamSubscription<Object?>>[];
   Player? _player;
@@ -24,6 +40,12 @@ final class MpvPlaybackEngine implements PlaybackEngine {
       MediaKit.ensureInitialized();
       final player = Player();
       _player = player;
+      if (!_configuration.enableAudioOutput) {
+        final platform = player.platform;
+        if (platform is NativePlayer) {
+          await platform.setProperty('ao', 'null');
+        }
+      }
       _subscriptions
         ..add(
           player.stream.position.listen(
@@ -70,8 +92,10 @@ final class MpvPlaybackEngine implements PlaybackEngine {
     }
   }
 
-  Player get _requiredPlayer =>
-      _player ?? (throw StateError('Engine not initialized'));
+  Player get _requiredPlayer {
+    if (_disposed) throw StateError('Engine disposed');
+    return _player ?? (throw StateError('Engine not initialized'));
+  }
 
   @override
   Future<void> load(
@@ -107,7 +131,11 @@ final class MpvPlaybackEngine implements PlaybackEngine {
   @override
   Future<void> pause() => _requiredPlayer.pause();
   @override
-  Future<void> stop() => _requiredPlayer.stop();
+  Future<void> stop() async {
+    await _requiredPlayer.stop();
+    _emit(EngineStateChanged(_generation, EngineState.stopped));
+  }
+
   @override
   Future<void> seek(Duration position) => _requiredPlayer.seek(position);
   @override
