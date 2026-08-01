@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'path_normalizer.dart';
+import 'file_identity_provider.dart';
 
 final class EnumeratedAudioFile {
   const EnumeratedAudioFile({
@@ -11,6 +12,7 @@ final class EnumeratedAudioFile {
     required this.fileName,
     required this.extension,
     required this.stat,
+    required this.platformFileId,
   });
   final File file;
   final String locator;
@@ -19,12 +21,18 @@ final class EnumeratedAudioFile {
   final String fileName;
   final String extension;
   final FileStat stat;
+  final String? platformFileId;
 }
 
 final class DirectoryEnumerator {
-  DirectoryEnumerator({WindowsPathNormalizer? normalizer})
-    : _normalizer = normalizer ?? const WindowsPathNormalizer();
+  DirectoryEnumerator({
+    WindowsPathNormalizer? normalizer,
+    FileIdentityProvider? identityProvider,
+  }) : _normalizer = normalizer ?? const WindowsPathNormalizer(),
+       _identityProvider =
+           identityProvider ?? const WindowsFileIdentityProvider();
   final WindowsPathNormalizer _normalizer;
+  final FileIdentityProvider _identityProvider;
 
   static const supportedExtensions = <String>{
     'aac',
@@ -71,6 +79,9 @@ final class DirectoryEnumerator {
         fileName: name,
         extension: extension,
         stat: await entity.stat(),
+        platformFileId: await _identityProvider.getPlatformFileId(
+          Uri.file(locator, windows: true),
+        ),
       );
     }
   }

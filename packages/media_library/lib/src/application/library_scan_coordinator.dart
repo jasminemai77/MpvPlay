@@ -8,6 +8,7 @@ import '../domain/library_models.dart' as domain;
 import '../infrastructure/database/media_library_database.dart';
 import '../infrastructure/filesystem/directory_enumerator.dart';
 import '../infrastructure/metadata/basic_metadata_reader.dart';
+import '../infrastructure/metadata/audio_metadata_reader_adapter.dart';
 
 final class LibraryScanProgress {
   const LibraryScanProgress({
@@ -45,13 +46,13 @@ final class LibraryScanCoordinator {
   LibraryScanCoordinator(
     this._database, {
     DirectoryEnumerator? enumerator,
-    BasicMetadataReader? metadataReader,
+    TrackMetadataReader? metadataReader,
   }) : _enumerator = enumerator ?? DirectoryEnumerator(),
-       _metadataReader = metadataReader ?? const BasicMetadataReader();
+       _metadataReader = metadataReader ?? AudioMetadataReaderAdapter();
 
   final MediaLibraryDatabase _database;
   final DirectoryEnumerator _enumerator;
-  final BasicMetadataReader _metadataReader;
+  final TrackMetadataReader _metadataReader;
   final _progress = StreamController<LibraryScanProgress>.broadcast();
   final _active = <String, ScanCancellationToken>{};
   static const _uuid = Uuid();
@@ -266,13 +267,21 @@ final class LibraryScanCoordinator {
     int generation,
     EnumeratedAudioFile file,
   ) async {
-    final existing =
+    var existing =
         await (_database.select(_database.mediaFiles)..where(
               (row) =>
                   row.rootId.equals(root.rowId) &
                   row.locatorKey.equals(file.locatorKey),
             ))
             .getSingleOrNull();
+    if (existing == null && file.platformFileId != null) {
+      final sameIdentity = await (_database.select(
+        _database.mediaFiles,
+      )..where((row) => row.platformFileId.equals(file.platformFileId!))).get();
+      if (sameIdentity.length == 1) {
+        existing = sameIdentity.single;
+      }
+    }
     final now = DateTime.now().toUtc();
     if (existing == null) {
       final mediaFileId = await _database
@@ -290,6 +299,7 @@ final class LibraryScanCoordinator {
               modifiedAtMicros: file.stat.modified
                   .toUtc()
                   .microsecondsSinceEpoch,
+              platformFileId: Value(file.platformFileId),
               availabilityState: 'available',
               metadataState: 'pending',
               lastSeenGeneration: generation,
@@ -298,7 +308,8 @@ final class LibraryScanCoordinator {
               updatedAt: now,
             ),
           );
-      final metadata = _metadataReader.read(file);
+      final metadataResult = await _metadataReader.read(file);
+      final metadata = metadataResult.metadata;
       final trackPublicId = _uuid.v7();
       final trackId = await _database
           .into(_database.tracks)
@@ -308,6 +319,16 @@ final class LibraryScanCoordinator {
               mediaFileId: mediaFileId,
               title: metadata.title,
               sortTitle: metadata.sortTitle,
+              displayArtist: Value(metadata.artist),
+              displayAlbum: Value(metadata.album),
+              durationMs: Value(metadata.duration?.inMilliseconds),
+              bitrateBps: Value(metadata.bitrateBps),
+              sampleRateHz: Value(metadata.sampleRateHz),
+              trackNumber: Value(metadata.trackNumber),
+              trackTotal: Value(metadata.trackTotal),
+              discNumber: Value(metadata.discNumber),
+              discTotal: Value(metadata.discTotal),
+              releaseYear: Value(metadata.releaseYear),
               searchText: metadata.searchText,
               metadataSource: Value(metadata.source),
               createdAt: now,
@@ -315,18 +336,24 @@ final class LibraryScanCoordinator {
             ),
           );
       await _syncFts(trackId, trackPublicId, metadata, file);
-      await (_database.update(_database.mediaFiles)
-            ..where((row) => row.rowId.equals(mediaFileId)))
-          .write(const MediaFilesCompanion(metadataState: Value('ready')));
+      await _persistRelations(trackId, metadata, now);
+      await (_database.update(
+        _database.mediaFiles,
+      )..where((row) => row.rowId.equals(mediaFileId))).write(
+        MediaFilesCompanion(
+          metadataState: Value(metadataResult.isSuccess ? 'ready' : 'failed'),
+        ),
+      );
       return const _UpsertResult(inserted: 1);
     }
+    final persistedFile = existing;
     final changed =
-        existing.sizeBytes != file.stat.size ||
-        existing.modifiedAtMicros !=
+        persistedFile.sizeBytes != file.stat.size ||
+        persistedFile.modifiedAtMicros !=
             file.stat.modified.toUtc().microsecondsSinceEpoch;
     await (_database.update(
       _database.mediaFiles,
-    )..where((row) => row.rowId.equals(existing.rowId))).write(
+    )..where((row) => row.rowId.equals(persistedFile.rowId))).write(
       MediaFilesCompanion(
         locator: Value(file.locator),
         relativePath: Value(file.relativePath),
@@ -336,6 +363,7 @@ final class LibraryScanCoordinator {
         modifiedAtMicros: Value(
           file.stat.modified.toUtc().microsecondsSinceEpoch,
         ),
+        platformFileId: Value(file.platformFileId),
         availabilityState: const Value('available'),
         lastSeenGeneration: Value(generation),
         lastSeenAt: Value(now),
@@ -344,10 +372,12 @@ final class LibraryScanCoordinator {
       ),
     );
     if (changed) {
-      final metadata = _metadataReader.read(file);
+      final metadataResult = await _metadataReader.read(file);
+      final metadata = metadataResult.metadata;
       final track =
-          await (_database.select(_database.tracks)
-                ..where((track) => track.mediaFileId.equals(existing.rowId)))
+          await (_database.select(_database.tracks)..where(
+                (track) => track.mediaFileId.equals(persistedFile.rowId),
+              ))
               .getSingleOrNull();
       if (track != null) {
         await (_database.update(
@@ -362,7 +392,15 @@ final class LibraryScanCoordinator {
             updatedAt: Value(now),
           ),
         );
+        await (_database.update(
+          _database.mediaFiles,
+        )..where((row) => row.rowId.equals(persistedFile.rowId))).write(
+          MediaFilesCompanion(
+            metadataState: Value(metadataResult.isSuccess ? 'ready' : 'failed'),
+          ),
+        );
         await _syncFts(track.rowId, track.publicId, metadata, file);
+        await _persistRelations(track.rowId, metadata, now);
       }
     }
     return changed
@@ -385,6 +423,116 @@ final class LibraryScanCoordinator {
       null,
       file.fileName,
     );
+  }
+
+  Future<void> _persistRelations(
+    int trackId,
+    BasicTrackMetadata metadata,
+    DateTime now,
+  ) async {
+    await (_database.delete(
+      _database.trackArtists,
+    )..where((row) => row.trackId.equals(trackId))).go();
+    await (_database.delete(
+      _database.trackGenres,
+    )..where((row) => row.trackId.equals(trackId))).go();
+    final artists = metadata.artists.isNotEmpty
+        ? metadata.artists
+        : [if (metadata.artist != null) metadata.artist!];
+    int? albumArtistId;
+    for (var position = 0; position < artists.length; position++) {
+      final artistId = await _ensureArtist(artists[position], now);
+      albumArtistId ??= artistId;
+      await _database
+          .into(_database.trackArtists)
+          .insert(
+            TrackArtistsCompanion.insert(
+              trackId: trackId,
+              artistId: artistId,
+              role: position == 0 ? 'primary' : 'performer',
+              position: position,
+            ),
+          );
+    }
+    int? albumId;
+    if (metadata.album case final album? when album.trim().isNotEmpty) {
+      final identity = '${albumArtistId ?? 0}|${album.trim().toLowerCase()}';
+      final existing = await (_database.select(
+        _database.albums,
+      )..where((row) => row.identityKey.equals(identity))).getSingleOrNull();
+      if (existing != null) {
+        albumId = existing.rowId;
+      } else {
+        albumId = await _database
+            .into(_database.albums)
+            .insert(
+              AlbumsCompanion.insert(
+                publicId: _uuid.v7(),
+                title: album.trim(),
+                sortTitle: album.trim().toLowerCase(),
+                identityKey: identity,
+                albumArtistId: Value(albumArtistId),
+                releaseYear: Value(metadata.releaseYear),
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      }
+    }
+    await (_database.update(_database.tracks)
+          ..where((row) => row.rowId.equals(trackId)))
+        .write(TracksCompanion(albumId: Value(albumId), updatedAt: Value(now)));
+    for (var position = 0; position < metadata.genres.length; position++) {
+      final name = metadata.genres[position].trim();
+      if (name.isEmpty) continue;
+      final identity = name.toLowerCase();
+      final existing = await (_database.select(
+        _database.genres,
+      )..where((row) => row.identityKey.equals(identity))).getSingleOrNull();
+      final genreId =
+          existing?.rowId ??
+          await _database
+              .into(_database.genres)
+              .insert(
+                GenresCompanion.insert(
+                  publicId: _uuid.v7(),
+                  name: name,
+                  identityKey: identity,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+      await _database
+          .into(_database.trackGenres)
+          .insert(
+            TrackGenresCompanion.insert(
+              trackId: trackId,
+              genreId: genreId,
+              position: position,
+            ),
+          );
+    }
+  }
+
+  Future<int> _ensureArtist(String name, DateTime now) async {
+    final trimmed = name.trim();
+    final identity = trimmed.toLowerCase();
+    final existing = await (_database.select(
+      _database.artists,
+    )..where((row) => row.identityKey.equals(identity))).getSingleOrNull();
+    return existing?.rowId ??
+        _database
+            .into(_database.artists)
+            .insert(
+              ArtistsCompanion.insert(
+                publicId: _uuid.v7(),
+                name: trimmed,
+                sortName: identity,
+                identityKey: identity,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
   }
 
   Future<void> _finishAborted(
