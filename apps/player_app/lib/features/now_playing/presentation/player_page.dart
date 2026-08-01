@@ -68,7 +68,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final snapshot = (ref.watch(snapshotProvider).value ??
+    final snapshot =
+        (ref.watch(snapshotProvider).value ??
         ref.watch(initialSnapshotProvider))!;
     final playing = snapshot.status == PlaybackStatus.playing;
     final maximum = snapshot.duration.inMilliseconds
