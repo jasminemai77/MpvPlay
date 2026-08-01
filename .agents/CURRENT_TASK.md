@@ -2,8 +2,8 @@
 
 Version: v0.3
 Task: Favorites and user playlists
-Status: IN_PROGRESS
-Gate: NOT_RUN
+Status: COMPLETED
+Gate: ACCEPTED
 Architecture Baseline: Media Library 2.0 + Collections Schema v2
 Base Commit: ba1f717
 
@@ -18,4 +18,3 @@ Forbidden:
 - playback history and recommendations
 - online playlists and cloud sync
 - queue editing or queue-to-playlist conversion
-- Android

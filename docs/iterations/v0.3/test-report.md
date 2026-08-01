@@ -12,6 +12,6 @@ Local delivery evidence: 35 media-library tests, 11 PlaybackRuntime tests, 1
 platform bridge test, 8 real libmpv tests, and 1 Flutter widget test passed.
 The current branch also produced a Windows Release executable.
 
-Local delivery evidence: 35 media-library tests, 11 PlaybackRuntime tests, 1
-platform bridge test, 8 real libmpv tests, and 1 Flutter widget test passed.
-The current branch also produced a Windows Release executable.
+Remote evidence: Windows CI run 30705191417 passed Drift generation and its
+committed-source check, formatting, analysis, all listed regressions, Windows
+Release build, and the `MpvPlay-windows-release` artifact upload.

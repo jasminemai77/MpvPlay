@@ -48,8 +48,9 @@ browsing, FTS, and library-to-playback mapping. `AppBootstrap` owns one
 database/facade/scanner and disposes them with the playback snapshot
 subscription and playback client.
 
-v0.2 is complete with Gate `ACCEPTED_WITH_RISK`. v0.3 adds favorites and user
-playlists through `MediaLibraryFacade`; Drift/SQLite remains the sole durable
-authority. Favorites and playlists must never store playback runtime state.
-The app-level `LibraryPlaybackMapper` remains the only collection-to-playback
-bridge. Missing tracks retain their relations but do not enter playback queues.
+v0.2 is complete with Gate `ACCEPTED_WITH_RISK`. v0.3 favorites and user
+playlists is complete with Gate `ACCEPTED`. Drift/SQLite remains the sole
+durable authority for collections. Favorites and playlists never store playback
+runtime state. The app-level `LibraryPlaybackMapper` remains the only
+collection-to-playback bridge. Missing tracks retain their relations but do not
+enter playback queues.

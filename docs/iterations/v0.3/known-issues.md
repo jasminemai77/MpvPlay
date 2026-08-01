@@ -4,5 +4,5 @@
   of scope.
 - Playlist positions use gaps of 1024 and are compacted atomically on an
   explicit reorder.
-- The Version Gate is not run until local regression, remote Windows CI,
-  Release artifact, and Draft PR evidence are complete.
+- The Version Gate is `ACCEPTED`; local regression, remote Windows CI, Release
+  artifact, and Draft PR evidence are complete.
