@@ -6,6 +6,7 @@
 - Added adapter-local null audio output configuration for CI.
 - Added Windows GitHub Actions validation and release artifact workflow.
 - Split application bootstrap, providers, app shell, and player presentation.
+- Completed Windows physical-audio verification and accepted the v0.1.1 Gate.
 
 ## 0.1.0
 

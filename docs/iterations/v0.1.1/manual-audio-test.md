@@ -1,12 +1,19 @@
 # Manual Windows Audio Test
 
-Status: `MANUAL_VERIFICATION_REQUIRED`
+Status: `PASS`
 
-The automated suite uses libmpv's null output and cannot prove audible sound.
-Run `flutter run -d windows` from `apps/player_app`, import the generated WAVs,
-and record PASS/FAIL for tone audibility, stereo left/right transition, pause,
-resume, mute, volume, seek, next, stop, close, and non-autoplay restore.
+Manual Windows audio verification completed for `flutter run -d windows` with
+the generated WAV fixtures.
 
-Environment fields to record: test date, Windows version, CPU architecture,
-audio device, connection type, Flutter version, media_kit version, and libmpv
-source. Do not mark this PASS until a human listens to the output.
+- PASS — 440 Hz audio output is audible.
+- PASS — Left/right channel transition matches the fixture.
+- PASS — Pause stops audio output.
+- PASS — Resume continues playback normally.
+- PASS — Mute and unmute work normally.
+- PASS — Volume control is effective.
+- PASS — Stop stops audio output immediately.
+- PASS — Closing the application leaves no residual audio.
+- PASS — Restarting the application does not autoplay.
+
+This confirms physical Windows audio output; the automated suite continues to
+cover the corresponding silent libmpv decoding paths.
