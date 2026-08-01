@@ -54,6 +54,44 @@ final class LibraryTrackDao {
     return tracks;
   }
 
+  Future<List<domain.LibraryTrack>> forAlbum(String albumId) async {
+    final album = await (_database.select(
+      _database.albums,
+    )..where((row) => row.publicId.equals(albumId))).getSingleOrNull();
+    if (album == null) return const [];
+    final query = _baseQuery()
+      ..where(_database.tracks.albumId.equals(album.rowId))
+      ..orderBy([
+        OrderingTerm.asc(_database.tracks.discNumber),
+        OrderingTerm.asc(_database.tracks.trackNumber),
+        OrderingTerm.asc(_database.tracks.sortTitle),
+      ]);
+    return (await query.get()).map(_map).toList(growable: false);
+  }
+
+  Future<List<domain.LibraryTrack>> forArtist(String artistId) async {
+    final artist = await (_database.select(
+      _database.artists,
+    )..where((row) => row.publicId.equals(artistId))).getSingleOrNull();
+    if (artist == null) return const [];
+    final query =
+        _database.select(_database.tracks).join([
+            innerJoin(
+              _database.mediaFiles,
+              _database.mediaFiles.rowId.equalsExp(
+                _database.tracks.mediaFileId,
+              ),
+            ),
+            innerJoin(
+              _database.trackArtists,
+              _database.trackArtists.trackId.equalsExp(_database.tracks.rowId),
+            ),
+          ])
+          ..where(_database.trackArtists.artistId.equals(artist.rowId))
+          ..orderBy([OrderingTerm.asc(_database.tracks.sortTitle)]);
+    return (await query.get()).map(_map).toList(growable: false);
+  }
+
   JoinedSelectStatement _baseQuery() =>
       _database.select(_database.tracks).join([
         innerJoin(

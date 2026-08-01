@@ -65,6 +65,19 @@ final class LibraryTrack {
   final bool available;
 }
 
+final class LibraryAlbum {
+  const LibraryAlbum({required this.id, required this.title, this.artist});
+  final String id;
+  final String title;
+  final String? artist;
+}
+
+final class LibraryArtist {
+  const LibraryArtist({required this.id, required this.name});
+  final String id;
+  final String name;
+}
+
 final class LibrarySearchResult {
   const LibrarySearchResult({required this.track, required this.rank});
   final LibraryTrack track;

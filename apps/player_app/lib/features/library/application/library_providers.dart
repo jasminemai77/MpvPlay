@@ -13,6 +13,12 @@ final libraryRootsProvider = StreamProvider<List<LibraryRoot>>(
 final libraryTracksProvider = StreamProvider<List<LibraryTrack>>(
   (ref) => ref.watch(libraryFacadeProvider).query.watchTracks(),
 );
+final libraryAlbumsProvider = StreamProvider<List<LibraryAlbum>>(
+  (ref) => ref.watch(libraryFacadeProvider).query.watchAlbums(),
+);
+final libraryArtistsProvider = StreamProvider<List<LibraryArtist>>(
+  (ref) => ref.watch(libraryFacadeProvider).query.watchArtists(),
+);
 final libraryScanProgressProvider = StreamProvider<LibraryScanProgress>(
   (ref) => ref.watch(libraryScanCoordinatorProvider).progress,
 );

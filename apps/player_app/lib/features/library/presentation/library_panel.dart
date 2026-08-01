@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_library/media_library.dart';
 
 import '../application/library_providers.dart';
+import 'album_page.dart';
+import 'artist_page.dart';
 
 class LibraryPanel extends ConsumerStatefulWidget {
   const LibraryPanel({super.key, required this.onPlay});
@@ -67,10 +69,33 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
           ListTile(
             leading: const Icon(Icons.library_music),
             title: const Text('Local library'),
-            trailing: IconButton(
-              icon: const Icon(Icons.create_new_folder_outlined),
-              tooltip: 'Add folder',
-              onPressed: _addRoot,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.album_outlined),
+                  tooltip: 'Albums',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => AlbumPage(onPlayAll: _playAll),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.person_outline),
+                  tooltip: 'Artists',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ArtistPage(onPlayAll: _playAll),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.create_new_folder_outlined),
+                  tooltip: 'Add folder',
+                  onPressed: _addRoot,
+                ),
+              ],
             ),
           ),
           if (progress != null)
@@ -157,5 +182,10 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
         ],
       ),
     );
+  }
+
+  Future<void> _playAll(List<LibraryTrack> tracks) {
+    if (tracks.isEmpty) return Future.value();
+    return widget.onPlay(tracks, tracks.first);
   }
 }

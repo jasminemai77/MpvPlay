@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../domain/library_models.dart';
 import '../infrastructure/database/dao/library_root_dao.dart';
 import '../infrastructure/database/dao/library_track_dao.dart';
+import '../infrastructure/database/dao/library_collection_dao.dart';
 import '../infrastructure/database/media_library_database.dart'
     hide LibraryRoot;
 import '../infrastructure/database/database_connection.dart';
@@ -19,6 +20,7 @@ final class MediaLibraryFacade {
       query = LibraryQueryService(
         LibraryRootDao(_database),
         LibraryTrackDao(_database),
+        LibraryCollectionDao(_database),
       );
 
   final MediaLibraryDatabase _database;

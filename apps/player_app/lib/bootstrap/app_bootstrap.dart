@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -19,11 +20,13 @@ final class AppBootstrap {
     this._initialSnapshot,
     this._library,
     this._scanner,
+    this._snapshotSubscription,
   );
   final PlaybackClient _client;
   final PlaybackSnapshot _initialSnapshot;
   final MediaLibraryFacade _library;
   final LibraryScanCoordinator _scanner;
+  final StreamSubscription<PlaybackSnapshot> _snapshotSubscription;
 
   static Future<AppBootstrap> create() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -76,22 +79,73 @@ final class AppBootstrap {
         skippedItems: restored.skippedItems,
       );
     }
-    runtime.snapshots.listen(store.save);
+    final snapshotSubscription = runtime.snapshots.listen(store.save);
     return AppBootstrap._(
       InProcessPlaybackClient(runtime),
       runtime.currentSnapshot,
       library,
       scanner,
+      snapshotSubscription,
     );
   }
 
-  Widget buildApp() => ProviderScope(
-    overrides: [
-      clientProvider.overrideWithValue(_client),
-      initialSnapshotProvider.overrideWithValue(_initialSnapshot),
-      libraryFacadeProvider.overrideWithValue(_library),
-      libraryScanCoordinatorProvider.overrideWithValue(_scanner),
-    ],
-    child: const MpvPlayApp(),
+  bool _disposed = false;
+
+  Widget buildApp() => _BootstrapHost(
+    bootstrap: this,
+    child: ProviderScope(
+      overrides: [
+        clientProvider.overrideWithValue(_client),
+        initialSnapshotProvider.overrideWithValue(_initialSnapshot),
+        libraryFacadeProvider.overrideWithValue(_library),
+        libraryScanCoordinatorProvider.overrideWithValue(_scanner),
+      ],
+      child: const MpvPlayApp(),
+    ),
   );
+
+  Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    await _snapshotSubscription.cancel();
+    await _scanner.close();
+    await _library.close();
+    await _client.dispose();
+  }
+}
+
+/// Owns the process-lifetime resources created by [AppBootstrap].
+final class _BootstrapHost extends StatefulWidget {
+  const _BootstrapHost({required this.bootstrap, required this.child});
+  final AppBootstrap bootstrap;
+  final Widget child;
+
+  @override
+  State<_BootstrapHost> createState() => _BootstrapHostState();
+}
+
+final class _BootstrapHostState extends State<_BootstrapHost>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      unawaited(widget.bootstrap.dispose());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(widget.bootstrap.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
