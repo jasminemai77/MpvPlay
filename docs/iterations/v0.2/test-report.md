@@ -15,3 +15,6 @@ FFmpeg is unavailable; CI reports that reason.
 The media-library suite runs from `packages/media_library` in Windows CI so
 the sqlite3 package's native build hook resolves its SQLite asset. The root
 workspace command does not activate that asset on a fresh Windows runner.
+
+Remote evidence: [Windows CI run 30701962460](https://github.com/jasminemai77/MpvPlay/actions/runs/30701962460)
+completed every validation and uploaded `MpvPlay-windows-release`.
