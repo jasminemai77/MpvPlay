@@ -9,7 +9,14 @@ void main() {
   test(
     'version one schema snapshot exists and opens as a new database',
     () async {
-      final snapshot = File('drift_schemas/drift_schema_v1.json');
+      final candidates = [
+        File('drift_schemas/drift_schema_v1.json'),
+        File('packages/media_library/drift_schemas/drift_schema_v1.json'),
+      ];
+      final snapshot = candidates.firstWhere(
+        (file) => file.existsSync(),
+        orElse: () => candidates.first,
+      );
       expect(await snapshot.exists(), isTrue);
       final schema =
           jsonDecode(await snapshot.readAsString()) as Map<String, dynamic>;

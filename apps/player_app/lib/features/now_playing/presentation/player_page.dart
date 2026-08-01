@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:playback_protocol/playback_protocol.dart';
 import 'package:player_core/player_core.dart';
+import 'package:media_library/media_library.dart';
 
+import '../../library/application/library_playback_mapper.dart';
+import '../../library/presentation/library_panel.dart';
 import '../application/playback_providers.dart';
 
 class PlayerPage extends ConsumerStatefulWidget {
@@ -295,6 +298,14 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                 ),
               ),
             ),
+            const SizedBox(width: 20),
+            Expanded(
+              flex: 2,
+              child: LibraryPanel(
+                onPlay: (tracks, selected) =>
+                    _playLibraryTracks(snapshot, tracks, selected),
+              ),
+            ),
           ],
         ),
       ),
@@ -317,6 +328,31 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       _send(create(m));
     },
   );
+
+  Future<void> _playLibraryTracks(
+    PlaybackSnapshot snapshot,
+    List<LibraryTrack> tracks,
+    LibraryTrack selected,
+  ) async {
+    const mapper = LibraryPlaybackMapper();
+    final items = tracks
+        .where((track) => track.available)
+        .map(mapper.mapTrack)
+        .toList(growable: false);
+    final selectedIndex = items.indexWhere((item) => item.id == selected.id);
+    if (selectedIndex < 0) return;
+    final meta = commandMetadata(snapshot, 'library-load');
+    await _send(
+      LoadQueue(
+        commandId: meta.commandId,
+        sessionId: meta.sessionId,
+        issuedAt: meta.issuedAt,
+        items: items,
+        initialIndex: selectedIndex,
+        autoPlay: true,
+      ),
+    );
+  }
 }
 
 String _format(Duration value) =>

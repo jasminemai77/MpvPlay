@@ -33,6 +33,7 @@ final class LibraryRoot {
     required this.displayName,
     this.recursive = true,
     this.enabled = true,
+    this.scanGeneration = 0,
   });
   final String id;
   final LibrarySourceType sourceType;
@@ -40,6 +41,7 @@ final class LibraryRoot {
   final String displayName;
   final bool recursive;
   final bool enabled;
+  final int scanGeneration;
 }
 
 final class LibraryTrack {
@@ -61,6 +63,12 @@ final class LibraryTrack {
   final Duration? duration;
   final Uri locator;
   final bool available;
+}
+
+final class LibrarySearchResult {
+  const LibrarySearchResult({required this.track, required this.rank});
+  final LibraryTrack track;
+  final double rank;
 }
 
 final class LibraryFailure {

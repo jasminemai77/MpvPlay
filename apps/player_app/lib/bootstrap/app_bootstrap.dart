@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_library/media_library.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:playback_engine_mpv/playback_engine_mpv.dart';
 import 'package:playback_protocol/playback_protocol.dart';
@@ -10,15 +11,27 @@ import 'package:platform_bridge/platform_bridge.dart';
 
 import '../app/mpv_play_app.dart';
 import '../features/now_playing/application/playback_providers.dart';
+import '../features/library/application/library_providers.dart';
 
 final class AppBootstrap {
-  AppBootstrap._(this._client, this._initialSnapshot);
+  AppBootstrap._(
+    this._client,
+    this._initialSnapshot,
+    this._library,
+    this._scanner,
+  );
   final PlaybackClient _client;
   final PlaybackSnapshot _initialSnapshot;
+  final MediaLibraryFacade _library;
+  final LibraryScanCoordinator _scanner;
 
   static Future<AppBootstrap> create() async {
     WidgetsFlutterBinding.ensureInitialized();
     final directory = await getApplicationSupportDirectory();
+    final library = MediaLibraryFacade.open(
+      File('${directory.path}${Platform.pathSeparator}media_library.sqlite'),
+    );
+    final scanner = library.createScanCoordinator();
     final runtime = PlaybackRuntime(
       engine: MpvPlaybackEngine(),
       logSink: JsonLinePlaybackLogger(
@@ -67,6 +80,8 @@ final class AppBootstrap {
     return AppBootstrap._(
       InProcessPlaybackClient(runtime),
       runtime.currentSnapshot,
+      library,
+      scanner,
     );
   }
 
@@ -74,6 +89,8 @@ final class AppBootstrap {
     overrides: [
       clientProvider.overrideWithValue(_client),
       initialSnapshotProvider.overrideWithValue(_initialSnapshot),
+      libraryFacadeProvider.overrideWithValue(_library),
+      libraryScanCoordinatorProvider.overrideWithValue(_scanner),
     ],
     child: const MpvPlayApp(),
   );
