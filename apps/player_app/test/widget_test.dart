@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mpv_play/app/mpv_play_app.dart';
+import 'package:mpv_play/features/library/application/library_providers.dart';
 import 'package:mpv_play/features/now_playing/application/playback_providers.dart';
 import 'package:playback_protocol/playback_protocol.dart';
 import 'package:playback_runtime/playback_runtime.dart';
@@ -40,6 +41,9 @@ void main() {
         overrides: [
           clientProvider.overrideWithValue(client),
           initialSnapshotProvider.overrideWithValue(snapshot),
+          libraryRootsProvider.overrideWith((_) => Stream.value(const [])),
+          libraryTracksProvider.overrideWith((_) => Stream.value(const [])),
+          libraryScanProgressProvider.overrideWith((_) => const Stream.empty()),
         ],
         child: const MpvPlayApp(),
       ),

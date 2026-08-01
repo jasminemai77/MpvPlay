@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (unreleased)
+
+- Added Drift/SQLite local-media library Schema v1 and migration baseline.
+- Added scan safety, FTS, metadata parsing, artist/album/genre relations, and
+  Windows File ID rename preservation.
+- Added local-library UI and library-to-playback mapping.
+
 ## 0.1.1
 
 - Added deterministic original test audio and real libmpv silent integration tests.

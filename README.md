@@ -1,6 +1,8 @@
 # MpvPlay
 
-MpvPlay is an open-source Flutter music player for Windows. Version 0.1 implements the local-file playback loop: multi-file import, queue selection, play/pause/stop, seek, volume/mute, automatic next track, error display, local JSON session restore, and local diagnostics.
+MpvPlay is an open-source Flutter music player for Windows. v0.2 adds a local
+media library: persistent roots, safe incremental scans, metadata, FTS search,
+albums/artists, artwork cache, and queue construction from library tracks.
 
 ## Run
 
@@ -21,3 +23,4 @@ Build with `flutter build windows --release` from `apps/player_app`. Supported p
 `PlaybackRuntime` is the only authority for the queue and observed playback state. UI renders `PlaybackSnapshot` and sends `PlaybackCommand`; it neither keeps a playback-state copy nor imports `media_kit`. `media_kit` appears only in `packages/playback_engine_mpv`.
 
 Run core tests with `dart test packages/playback_runtime` and widget tests with `flutter test apps/player_app`.
+Run media-library tests with `dart test packages/media_library`.

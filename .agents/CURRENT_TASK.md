@@ -1,6 +1,27 @@
 # Current Task
 
-Version: v0.1.1
-Status: COMPLETED
-Gate: ACCEPTED
-Next: v0.2 local media library
+Version: v0.2
+Task: Local media library
+Status: COMPLETED_WITH_RISK
+Gate: ACCEPTED_WITH_RISK
+Architecture Baseline: Media Library 2.0
+Base Commit: 0868f62
+
+Scope:
+- directory roots
+- Drift and SQLite
+- incremental scanning
+- metadata extraction
+- artwork cache
+- tracks, albums and artists
+- search
+- library-to-playback mapping
+
+Forbidden:
+- Android
+- video
+- lyrics
+- DSP
+- SMTC
+- online music
+- dynamic plugins

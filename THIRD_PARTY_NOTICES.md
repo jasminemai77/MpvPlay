@@ -7,4 +7,7 @@
 - file_picker — MIT.
 - path_provider — BSD-3-Clause.
 
+- audio_metadata_reader 1.7.1 is MIT licensed.
+- Drift, sqlite3, ffi, and win32 are MIT licensed.
+
 Flutter also emits its dependency notices in the release bundle at `data/flutter_assets/NOTICES.Z`.

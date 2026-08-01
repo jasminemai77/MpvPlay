@@ -1,0 +1,24 @@
+CREATE VIRTUAL TABLE track_search_fts USING fts5(
+  track_public_id UNINDEXED,
+  title,
+  artist,
+  album,
+  file_name,
+  tokenize = 'trigram'
+);
+
+deleteTrackSearch:
+DELETE FROM track_search_fts WHERE rowid = :trackRowId;
+
+insertTrackSearch:
+INSERT INTO track_search_fts(rowid, track_public_id, title, artist, album, file_name)
+VALUES (:trackRowId, :trackPublicId, :title, :artist, :album, :fileName);
+
+searchTracksFts:
+SELECT rowid AS track_row_id, track_public_id, bm25(track_search_fts) AS rank
+FROM track_search_fts
+WHERE track_search_fts MATCH :query
+ORDER BY rank, track_public_id;
+
+clearTrackSearch:
+DELETE FROM track_search_fts;

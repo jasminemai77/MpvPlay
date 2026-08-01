@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          databases:
+            media_library: lib/src/infrastructure/database/media_library_database.dart
+          schema_dir: drift_schemas/
+          test_dir: test/database/generated/
+          sql:
+            dialect: sqlite
+            options:
+              version: "3.51"
+              modules:
+                - fts5
