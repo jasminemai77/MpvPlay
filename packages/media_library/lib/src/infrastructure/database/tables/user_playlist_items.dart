@@ -14,11 +14,8 @@ class UserPlaylistItems extends Table {
     #rowId,
     onDelete: KeyAction.cascade,
   )();
-  IntColumn get trackId => integer().references(
-    Tracks,
-    #rowId,
-    onDelete: KeyAction.cascade,
-  )();
+  IntColumn get trackId =>
+      integer().references(Tracks, #rowId, onDelete: KeyAction.cascade)();
   IntColumn get position => integer()();
   DateTimeColumn get addedAt => dateTime()();
 

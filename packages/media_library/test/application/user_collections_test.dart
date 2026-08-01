@@ -55,8 +55,10 @@ void main() {
     final firstRow = await _trackRow(database, firstTrack);
     await _setAvailability(database, firstRow.mediaFileId, 'missing');
     var detail = await facade.watchPlaylist(playlist.id).first;
-    expect(detail!.tracks.singleWhere((track) => track.id == firstTrack).available,
-        isFalse);
+    expect(
+      detail!.tracks.singleWhere((track) => track.id == firstTrack).available,
+      isFalse,
+    );
     await _setAvailability(database, firstRow.mediaFileId, 'available');
     await expectLater(
       facade.addTrackToPlaylist(playlist.id, firstTrack),
