@@ -31,3 +31,12 @@ The current Flutter SDK pins an analyzer version incompatible with drift_dev
 2.34.3. Drift and sqlite3 runtime dependencies remain fixed as reviewed; v0.2
 uses explicit schema/query code until the SDK/codegen compatibility can be
 resolved without destabilizing the workspace.
+
+## ARCHITECTURE_DECISION_REQUIRED: Drift codegen compatibility
+
+Attempted on 2026-08-01: Drift 2.32.1, drift_dev 2.32.1, build_runner 2.13.1,
+analyzer 12.1.0, sqlite3 3.5.0, Flutter/Dart workspace SDK 3.44.8/3.12.2.
+`dart run build_runner build` failed compiling drift_dev because sqlparser
+0.44.6's DartPlaceholder has no `when` method. No generated database code was
+produced. WP-03 is stopped; no raw-sql or hand-written Drift replacement will
+be adopted until a compatible reviewed version combination is selected.

@@ -6,4 +6,5 @@
 | 2026-08-01 | WP-03 to WP-06 | Added generated WAV/corrupt fixtures, adapter-local null-output configuration, and real libmpv integration tests. | 20 Dart tests passed with bundled libmpv DLL on PATH. | Human listening remains required. |
 | 2026-08-01 | WP-08 to WP-09 | Added Windows CI and split application bootstrap/composition/presentation. | Flutter regression pending final command. | Push/PR blocked by expired GitHub token. |
 | 2026-08-01 | v0.2 WP-01 | Initialized Media Library 2.0 workspace and preserved out-of-scope music.mid. | Drift/SQLite runtime dependencies resolved. | Implement schema and scan safety. |
+| 2026-08-01 | v0.2 WP-03 | Tested pinned Drift generator toolchain. | Failed: drift_dev 2.32.1 expects unavailable sqlparser DartPlaceholder.when. | ARCHITECTURE_DECISION_REQUIRED; database work stopped. |
 | 2026-08-01 | Gate closure | Fixed missing-ffmpeg handling, completed Windows CI, and recorded manual Windows audio verification. | PR #1 Windows CI success; audible output, stereo, pause/resume, mute/volume, Stop, clean exit, and no autoplay all passed. | v0.1.1 Gate accepted; next is v0.2 local media library. |
