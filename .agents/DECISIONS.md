@@ -24,3 +24,10 @@ separate manual checklist.
 Bootstrap owns runtime/session composition, Riverpod providers and command
 metadata are application concerns, and widgets only render snapshots and send
 commands.
+
+## D-005: v0.2 Drift runtime starts without drift_dev
+
+The current Flutter SDK pins an analyzer version incompatible with drift_dev
+2.34.3. Drift and sqlite3 runtime dependencies remain fixed as reviewed; v0.2
+uses explicit schema/query code until the SDK/codegen compatibility can be
+resolved without destabilizing the workspace.

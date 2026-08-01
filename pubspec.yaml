@@ -14,3 +14,4 @@ workspace:
   - packages/playback_runtime
   - packages/playback_engine_mpv
   - packages/platform_bridge
+  - packages/media_library

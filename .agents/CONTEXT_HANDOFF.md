@@ -2,8 +2,9 @@
 
 ## Project and version
 
-MpvPlay is a Windows-first Flutter music player. The current task is v0.1.1:
-real libmpv playback verification and engineering stabilization.
+MpvPlay is a Windows-first Flutter music player. v0.1.1 is complete; the
+current task is v0.2 local media library under the frozen Media Library 2.0
+baseline.
 
 ## Architecture
 
@@ -33,11 +34,11 @@ media_kit_libs_windows_audio 1.0.9. Core packages are `player_core`,
 - Do not import media_kit outside `playback_engine_mpv`.
 - Do not add another playback-state authority.
 - Do not expose uncontrolled mpv options or platform types above the adapter.
-- Keep Android, media-library, video, lyrics, DSP, and database work out of this version.
+- `media_library` owns Drift/SQLite data and never imports media_kit or Flutter.
+- Failed, cancelled, or incomplete scans must never mark files missing.
 
 ## Current risks and next work
 
-v0.1 lacked real decoder/output verification. v0.1.1 adds deterministic audio,
-silent real-engine tests, failure recovery, Windows CI, UI file split, and a
-manual listening checklist. The manual audio result must never be inferred from
-silent automation.
+PlaybackRuntime remains the playback authority; MediaLibraryDatabase is the
+persistent library authority; LibraryScanCoordinator is the scan-state
+authority. Only the app-level mapper may depend on library and playback models.
