@@ -6,6 +6,10 @@ import 'package:media_library/media_library.dart';
 import '../application/library_providers.dart';
 import 'album_page.dart';
 import 'artist_page.dart';
+import '../../collections/application/collections_providers.dart';
+import '../../collections/presentation/add_to_playlist_dialog.dart';
+import '../../collections/presentation/favorites_page.dart';
+import '../../collections/presentation/playlists_page.dart';
 
 class LibraryPanel extends ConsumerStatefulWidget {
   const LibraryPanel({super.key, required this.onPlay});
@@ -72,23 +76,46 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.album_outlined),
-                  tooltip: 'Albums',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => AlbumPage(onPlayAll: _playAll),
+                PopupMenuButton<_LibraryDestination>(
+                  tooltip: 'Collections',
+                  icon: const Icon(Icons.library_books_outlined),
+                  onSelected: (destination) {
+                    final page = switch (destination) {
+                      _LibraryDestination.favorites => FavoritesPage(
+                        onPlay: widget.onPlay,
+                      ),
+                      _LibraryDestination.playlists => PlaylistsPage(
+                        onPlay: widget.onPlay,
+                      ),
+                      _LibraryDestination.albums => AlbumPage(
+                        onPlayAll: _playAll,
+                      ),
+                      _LibraryDestination.artists => ArtistPage(
+                        onPlayAll: _playAll,
+                      ),
+                    };
+                    Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute<void>(builder: (_) => page));
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: _LibraryDestination.favorites,
+                      child: Text('Favorites'),
                     ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.person_outline),
-                  tooltip: 'Artists',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => ArtistPage(onPlayAll: _playAll),
+                    PopupMenuItem(
+                      value: _LibraryDestination.playlists,
+                      child: Text('Playlists'),
                     ),
-                  ),
+                    PopupMenuItem(
+                      value: _LibraryDestination.albums,
+                      child: Text('Albums'),
+                    ),
+                    PopupMenuItem(
+                      value: _LibraryDestination.artists,
+                      child: Text('Artists'),
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: const Icon(Icons.create_new_folder_outlined),
@@ -162,6 +189,9 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
                     itemCount: tracks.length,
                     itemBuilder: (context, index) {
                       final track = tracks[index];
+                      final favorite =
+                          ref.watch(isFavoriteProvider(track.id)).value ??
+                          false;
                       return ListTile(
                         dense: true,
                         leading: const Icon(Icons.music_note),
@@ -175,6 +205,32 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
                         onTap: track.available
                             ? () => widget.onPlay(tracks, track)
                             : null,
+                        trailing: Wrap(
+                          children: [
+                            IconButton(
+                              tooltip: favorite
+                                  ? 'Remove favorite'
+                                  : 'Add favorite',
+                              onPressed: () => ref
+                                  .read(collectionsControllerProvider)
+                                  .setFavorite(track.id, !favorite),
+                              icon: Icon(
+                                favorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_outline,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Add to playlist',
+                              onPressed: () => showAddToPlaylistDialog(
+                                context,
+                                ref,
+                                track.id,
+                              ),
+                              icon: const Icon(Icons.playlist_add),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -189,3 +245,5 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
     return widget.onPlay(tracks, tracks.first);
   }
 }
+
+enum _LibraryDestination { favorites, playlists, albums, artists }
