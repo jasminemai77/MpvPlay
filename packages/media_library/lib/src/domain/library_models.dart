@@ -78,6 +78,53 @@ final class LibraryArtist {
   final String name;
 }
 
+final class FavoriteLibraryTrack {
+  const FavoriteLibraryTrack({required this.track, required this.favoritedAt});
+  final LibraryTrack track;
+  final DateTime favoritedAt;
+}
+
+final class UserPlaylist {
+  const UserPlaylist({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.trackCount,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  final String id;
+  final String name;
+  final String? description;
+  final int trackCount;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+}
+
+final class UserPlaylistDetail {
+  const UserPlaylistDetail({required this.playlist, required this.tracks});
+  final UserPlaylist playlist;
+  final List<LibraryTrack> tracks;
+}
+
+enum CollectionFailureCode {
+  playlistNotFound,
+  trackNotFound,
+  duplicatePlaylistTrack,
+  invalidPlaylistName,
+  invalidTrackOrder,
+  databaseFailure,
+}
+
+final class CollectionFailure implements Exception {
+  const CollectionFailure(this.code, {this.message});
+  final CollectionFailureCode code;
+  final String? message;
+
+  @override
+  String toString() => 'CollectionFailure(${code.name}): ${message ?? ''}';
+}
+
 final class LibrarySearchResult {
   const LibrarySearchResult({required this.track, required this.rank});
   final LibraryTrack track;

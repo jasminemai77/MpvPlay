@@ -3,8 +3,8 @@
 ## Project and version
 
 MpvPlay is a Windows-first Flutter music player. v0.1.1 is complete; the
-current task is v0.2 local media library under the frozen Media Library 2.0
-baseline.
+current task is v0.3 favorites and user playlists, built on the frozen Media
+Library 2.0 baseline.
 
 ## Architecture
 
@@ -48,7 +48,9 @@ browsing, FTS, and library-to-playback mapping. `AppBootstrap` owns one
 database/facade/scanner and disposes them with the playback snapshot
 subscription and playback client.
 
-Remaining delivery work is local regression, remote Windows CI, release
-artifact evidence, and a Draft PR. The Version Gate is explicitly not run
-until those items are complete. Do not weaken the rule that failed, cancelled,
-or coverage-incomplete scans never execute Missing Finalization.
+v0.2 is complete with Gate `ACCEPTED_WITH_RISK`. v0.3 favorites and user
+playlists is complete with Gate `ACCEPTED`. Drift/SQLite remains the sole
+durable authority for collections. Favorites and playlists never store playback
+runtime state. The app-level `LibraryPlaybackMapper` remains the only
+collection-to-playback bridge. Missing tracks retain their relations but do not
+enter playback queues.

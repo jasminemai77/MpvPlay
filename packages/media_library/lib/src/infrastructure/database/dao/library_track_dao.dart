@@ -14,14 +14,16 @@ final class LibraryTrackDao {
     final query = _baseQuery()
       ..orderBy([OrderingTerm.asc(_database.tracks.sortTitle)])
       ..limit(limit, offset: offset);
-    return (await query.get()).map(_map).toList(growable: false);
+    return (await query.get()).map(mapJoinedRow).toList(growable: false);
   }
 
   Stream<List<domain.LibraryTrack>> watchAll({int limit = 200}) {
     final query = _baseQuery()
       ..orderBy([OrderingTerm.asc(_database.tracks.sortTitle)])
       ..limit(limit);
-    return query.watch().map((rows) => rows.map(_map).toList(growable: false));
+    return query.watch().map(
+      (rows) => rows.map(mapJoinedRow).toList(growable: false),
+    );
   }
 
   Future<List<domain.LibraryTrack>> searchLike(
@@ -37,7 +39,7 @@ final class LibraryTrackDao {
       )
       ..orderBy([OrderingTerm.asc(_database.tracks.sortTitle)])
       ..limit(limit);
-    return (await query.get()).map(_map).toList(growable: false);
+    return (await query.get()).map(mapJoinedRow).toList(growable: false);
   }
 
   Future<List<domain.LibraryTrack>> searchFts(String query) async {
@@ -49,7 +51,7 @@ final class LibraryTrackDao {
                 _database.tracks.publicId.equals(match.trackPublicId ?? ''),
               ))
               .getSingleOrNull();
-      if (row != null) tracks.add(_map(row));
+      if (row != null) tracks.add(mapJoinedRow(row));
     }
     return tracks;
   }
@@ -66,7 +68,7 @@ final class LibraryTrackDao {
         OrderingTerm.asc(_database.tracks.trackNumber),
         OrderingTerm.asc(_database.tracks.sortTitle),
       ]);
-    return (await query.get()).map(_map).toList(growable: false);
+    return (await query.get()).map(mapJoinedRow).toList(growable: false);
   }
 
   Future<List<domain.LibraryTrack>> forArtist(String artistId) async {
@@ -89,7 +91,7 @@ final class LibraryTrackDao {
           ])
           ..where(_database.trackArtists.artistId.equals(artist.rowId))
           ..orderBy([OrderingTerm.asc(_database.tracks.sortTitle)]);
-    return (await query.get()).map(_map).toList(growable: false);
+    return (await query.get()).map(mapJoinedRow).toList(growable: false);
   }
 
   JoinedSelectStatement _baseQuery() =>
@@ -100,7 +102,7 @@ final class LibraryTrackDao {
         ),
       ]);
 
-  domain.LibraryTrack _map(TypedResult row) {
+  domain.LibraryTrack mapJoinedRow(TypedResult row) {
     final track = row.readTable(_database.tracks);
     final mediaFile = row.readTable(_database.mediaFiles);
     return domain.LibraryTrack(

@@ -2,13 +2,20 @@ import '../domain/library_models.dart';
 import '../infrastructure/database/dao/library_root_dao.dart';
 import '../infrastructure/database/dao/library_track_dao.dart';
 import '../infrastructure/database/dao/library_collection_dao.dart';
+import '../infrastructure/database/dao/user_collections_dao.dart';
 
 /// The only read surface exported to UI and application composition.
 final class LibraryQueryService {
-  LibraryQueryService(this._roots, this._tracks, this._collections);
+  LibraryQueryService(
+    this._roots,
+    this._tracks,
+    this._collections,
+    this._userCollections,
+  );
   final LibraryRootDao _roots;
   final LibraryTrackDao _tracks;
   final LibraryCollectionDao _collections;
+  final UserCollectionsDao _userCollections;
 
   Future<List<LibraryRoot>> listRoots() => _roots.list();
   Stream<List<LibraryRoot>> watchRoots() => _roots.watchAll();
@@ -18,6 +25,16 @@ final class LibraryQueryService {
       _tracks.watchAll(limit: limit);
   Stream<List<LibraryAlbum>> watchAlbums() => _collections.watchAlbums();
   Stream<List<LibraryArtist>> watchArtists() => _collections.watchArtists();
+  Stream<List<LibraryTrack>> watchFavoriteTracks() =>
+      _userCollections.watchFavoriteTracks();
+  Stream<int> watchMissingFavoriteCount() =>
+      _userCollections.watchMissingFavoriteCount();
+  Stream<bool> watchIsFavorite(String trackId) =>
+      _userCollections.watchIsFavorite(trackId);
+  Stream<List<UserPlaylist>> watchPlaylists() =>
+      _userCollections.watchPlaylists();
+  Stream<UserPlaylistDetail?> watchPlaylist(String playlistId) =>
+      _userCollections.watchPlaylist(playlistId);
   Future<List<LibraryTrack>> tracksForAlbum(String albumId) =>
       _tracks.forAlbum(albumId);
   Future<List<LibraryTrack>> tracksForArtist(String artistId) =>

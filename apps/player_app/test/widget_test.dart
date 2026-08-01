@@ -51,6 +51,7 @@ void main() {
     expect(find.text('MpvPlay'), findsOneWidget);
     expect(find.text('Choose music'), findsOneWidget);
     expect(find.text('Queue is empty'), findsOneWidget);
+    expect(find.byTooltip('Collections'), findsOneWidget);
     await client.dispose();
   });
 }

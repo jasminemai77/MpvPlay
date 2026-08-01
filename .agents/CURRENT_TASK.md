@@ -1,27 +1,20 @@
 # Current Task
 
-Version: v0.2
-Task: Local media library
-Status: COMPLETED_WITH_RISK
-Gate: ACCEPTED_WITH_RISK
-Architecture Baseline: Media Library 2.0
-Base Commit: 0868f62
+Version: v0.3
+Task: Favorites and user playlists
+Status: COMPLETED
+Gate: ACCEPTED
+Architecture Baseline: Media Library 2.0 + Collections Schema v2
+Base Commit: ba1f717
 
 Scope:
-- directory roots
-- Drift and SQLite
-- incremental scanning
-- metadata extraction
-- artwork cache
-- tracks, albums and artists
-- search
-- library-to-playback mapping
+- persistent track favorites
+- user playlists and ordered playlist tracks
+- Drift Schema v2 migration
+- collection-to-playback mapping through the existing App mapper
 
 Forbidden:
 - Android
-- video
-- lyrics
-- DSP
-- SMTC
-- online music
-- dynamic plugins
+- playback history and recommendations
+- online playlists and cloud sync
+- queue editing or queue-to-playlist conversion
