@@ -37,12 +37,18 @@ media_kit_libs_windows_audio 1.0.9. Core packages are `player_core`,
 - `media_library` owns Drift/SQLite data and never imports media_kit or Flutter.
 - Failed, cancelled, or incomplete scans must never mark files missing.
 
-## Current risks and next work
+## Current implementation state
 
 PlaybackRuntime remains the playback authority; MediaLibraryDatabase is the
 persistent library authority; LibraryScanCoordinator is the scan-state
 authority. Only the app-level mapper may depend on library and playback models.
-The local-library core loop is implemented and a Windows release build has
-passed locally. Before the v0.2 Version Gate, complete album/artist/genre
-browsing and Windows File ID-based rename identity preservation; do not weaken
-the scan cancellation/failure rule to do so.
+The local-library core loop is implemented: Schema v1, metadata parsing,
+Windows File ID rename preservation, album/artist/genre relations, UI
+browsing, FTS, and library-to-playback mapping. `AppBootstrap` owns one
+database/facade/scanner and disposes them with the playback snapshot
+subscription and playback client.
+
+Remaining delivery work is local regression, remote Windows CI, release
+artifact evidence, and a Draft PR. The Version Gate is explicitly not run
+until those items are complete. Do not weaken the rule that failed, cancelled,
+or coverage-incomplete scans never execute Missing Finalization.

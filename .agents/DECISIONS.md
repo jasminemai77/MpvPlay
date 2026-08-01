@@ -51,3 +51,16 @@ Drift remains the authority for generated schema/query code. Production uses
 one background connection with no read pool; memory tests enable foreign keys.
 The generated Schema Version 1 snapshot is committed before any WP-04 DAO or
 scanner work, so future schema changes require a step-by-step migration.
+
+## D-007: Windows identity is advisory and never auto-merges rows
+
+Windows `FILE_ID_INFO` is read only inside the filesystem infrastructure layer.
+The scanner first matches root plus normalized path and only accepts a unique
+platform File ID as a rename/move match. Multiple records with the same File ID
+remain separate hard-link or duplicate candidates.
+
+## D-008: audio_metadata_reader is the tag adapter
+
+The pure-Dart `audio_metadata_reader` package supplies real WAV, MP3, FLAC,
+M4A, OGG, and Opus parsing behind an internal adapter. Parser failures keep a
+playable file and filename-derived title while recording `metadataState=failed`.

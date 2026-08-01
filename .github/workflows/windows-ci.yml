@@ -19,11 +19,15 @@ jobs:
       - run: dart --version
       - run: flutter pub get
       - run: dart run tools/test_media_generator/generate.dart
+      - name: Generate Drift sources
+        working-directory: packages/media_library
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Verify generated Drift sources are committed
+        run: git diff --exit-code -- packages/media_library/lib/src/infrastructure/database/media_library_database.g.dart
       - run: dart format --output=none --set-exit-if-changed apps packages tools
       - run: flutter analyze
       - run: dart test packages/playback_runtime
       - run: dart test packages/platform_bridge
-      - run: dart test packages/media_library
       - run: dart test packages/media_library
       - name: Build debug bundle for libmpv integration tests
         run: flutter build windows --debug
