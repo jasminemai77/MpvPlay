@@ -2,7 +2,8 @@
 
 Version: v0.2
 Task: Local media library
-Status: IN_PROGRESS
+Status: COMPLETED_WITH_RISK
+Gate: ACCEPTED_WITH_RISK
 Architecture Baseline: Media Library 2.0
 Base Commit: 0868f62
 
