@@ -28,7 +28,9 @@ jobs:
       - run: flutter analyze
       - run: dart test packages/playback_runtime
       - run: dart test packages/platform_bridge
-      - run: dart test packages/media_library
+      - name: Run media-library tests with native SQLite assets
+        working-directory: packages/media_library
+        run: dart test
       - name: Build debug bundle for libmpv integration tests
         run: flutter build windows --debug
         working-directory: apps/player_app

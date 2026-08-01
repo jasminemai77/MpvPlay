@@ -11,3 +11,7 @@ real WAV/MP3/FLAC/M4A/OGG/Opus parsing.
 The MP3 fixture is deterministically generated with title, artist, album, and
 genre tags. Compressed fixture generation is permitted to be skipped only when
 FFmpeg is unavailable; CI reports that reason.
+
+The media-library suite runs from `packages/media_library` in Windows CI so
+the sqlite3 package's native build hook resolves its SQLite asset. The root
+workspace command does not activate that asset on a fresh Windows runner.
