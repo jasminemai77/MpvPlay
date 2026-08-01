@@ -42,3 +42,7 @@ media_kit_libs_windows_audio 1.0.9. Core packages are `player_core`,
 PlaybackRuntime remains the playback authority; MediaLibraryDatabase is the
 persistent library authority; LibraryScanCoordinator is the scan-state
 authority. Only the app-level mapper may depend on library and playback models.
+The local-library core loop is implemented and a Windows release build has
+passed locally. Before the v0.2 Version Gate, complete album/artist/genre
+browsing and Windows File ID-based rename identity preservation; do not weaken
+the scan cancellation/failure rule to do so.
