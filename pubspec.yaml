@@ -2,6 +2,8 @@ name: mpv_play_workspace
 publish_to: none
 environment:
   sdk: ^3.12.0
+dependencies:
+  crypto: ^3.0.6
 workspace:
   - apps/player_app
   - packages/player_core
@@ -10,4 +12,3 @@ workspace:
   - packages/playback_runtime
   - packages/playback_engine_mpv
   - packages/platform_bridge
-
