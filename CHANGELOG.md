@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+- Added persistent favorite tracks and flat user playlists.
+- Added Schema v2 with a tested v1-to-v2 migration and ordered playlist items.
+- Added Favorites and Playlists UI with playback through LibraryPlaybackMapper.
+
 ## 0.2.0 (unreleased)
 
 - Added Drift/SQLite local-media library Schema v1 and migration baseline.

@@ -64,3 +64,16 @@ remain separate hard-link or duplicate candidates.
 The pure-Dart `audio_metadata_reader` package supplies real WAV, MP3, FLAC,
 M4A, OGG, and Opus parsing behind an internal adapter. Parser failures keep a
 playable file and filename-derived title while recording `metadataState=failed`.
+
+## D-009: Collections are media-library relations, not playback state
+
+Favorites and user playlists are durable Drift relations keyed by internal
+`tracks.row_id`. PlaybackRuntime remains the sole source of queue, current
+item, state, and progress. The app-level LibraryPlaybackMapper is the only
+collection-to-playback bridge.
+
+## D-010: Playlist tracks are unique and ordered transactionally
+
+A track can appear once per user playlist. Position values use gaps of 1024;
+reorder validates the exact current track set and updates temporary positions
+and final positions inside one short transaction.

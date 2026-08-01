@@ -1,8 +1,8 @@
 # MpvPlay
 
-MpvPlay is an open-source Flutter music player for Windows. v0.2 adds a local
-media library: persistent roots, safe incremental scans, metadata, FTS search,
-albums/artists, artwork cache, and queue construction from library tracks.
+MpvPlay is an open-source Flutter music player for Windows. v0.3 adds
+persistent track favorites and user playlists on top of its local media
+library, safe scans, metadata, search, and queue construction.
 
 ## Run
 

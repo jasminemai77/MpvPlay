@@ -4,12 +4,12 @@ import 'package:test/test.dart';
 
 void main() {
   test(
-    'schema v1 contains its physical tables, indexes, foreign keys and FTS',
+    'schema v2 contains collection tables, constraints, foreign keys and FTS',
     () async {
       final database = MediaLibraryDatabase(openInMemoryMediaLibraryDatabase());
       addTearDown(database.close);
 
-      expect(database.schemaVersion, 1);
+      expect(database.schemaVersion, 2);
       final tables = await database
           .customSelect(
             "SELECT name FROM sqlite_master WHERE type IN ('table', 'view') ORDER BY name",
@@ -29,6 +29,9 @@ void main() {
           'track_artists',
           'genres',
           'track_genres',
+          'favorite_tracks',
+          'user_playlists',
+          'user_playlist_items',
           'track_search_fts',
         }),
       );
@@ -58,6 +61,9 @@ void main() {
           'track_artists_track_position',
           'track_genres_genre_id',
           'track_genres_track_position',
+          'favorite_tracks_created_at',
+          'user_playlists_updated_at',
+          'user_playlist_items_playlist_position',
         }),
       );
 
@@ -68,6 +74,8 @@ void main() {
         'tracks',
         'track_artists',
         'track_genres',
+        'favorite_tracks',
+        'user_playlist_items',
       ]) {
         final foreignKeys = await database
             .customSelect('PRAGMA foreign_key_list($table)')
