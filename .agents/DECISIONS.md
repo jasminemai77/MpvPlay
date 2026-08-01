@@ -25,12 +25,13 @@ Bootstrap owns runtime/session composition, Riverpod providers and command
 metadata are application concerns, and widgets only render snapshots and send
 commands.
 
-## D-005: v0.2 Drift runtime starts without drift_dev
+## D-005: v0.2 Drift runtime starts without drift_dev (superseded)
 
 The current Flutter SDK pins an analyzer version incompatible with drift_dev
 2.34.3. Drift and sqlite3 runtime dependencies remain fixed as reviewed; v0.2
-uses explicit schema/query code until the SDK/codegen compatibility can be
-resolved without destabilizing the workspace.
+used explicit schema/query code only until the SDK/codegen compatibility could
+be resolved without destabilizing the workspace. This is superseded by the
+resolved toolchain decision below.
 
 ## RESOLVED: Drift codegen compatibility
 
@@ -41,3 +42,12 @@ DartPlaceholder has no `when` method. Pinning sqlparser 0.44.5 resolved the
 issue: Drift generation and the in-memory LibraryRoots database test pass.
 No Flutter SDK upgrade, raw sqlite3 replacement, or permanent hand-written
 Drift approach was used.
+
+## D-006: Schema Version 1 is the media-library persistence baseline
+
+WP-03 defines all ten relational tables, physical foreign keys and indexes,
+and a content-owning FTS5 trigram table in a single `MediaLibraryDatabase`.
+Drift remains the authority for generated schema/query code. Production uses
+one background connection with no read pool; memory tests enable foreign keys.
+The generated Schema Version 1 snapshot is committed before any WP-04 DAO or
+scanner work, so future schema changes require a step-by-step migration.

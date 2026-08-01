@@ -1,31 +1,43 @@
 import 'package:drift/drift.dart';
 
+import 'tables/albums.dart';
+import 'tables/artists.dart';
+import 'tables/artwork_assets.dart';
+import 'tables/genres.dart';
+import 'tables/library_roots.dart';
+import 'tables/media_files.dart';
+import 'tables/scan_runs.dart';
+import 'tables/track_artists.dart';
+import 'tables/track_genres.dart';
+import 'tables/tracks.dart';
+
 part 'media_library_database.g.dart';
 
-class LibraryRoots extends Table {
-  IntColumn get rowId => integer().autoIncrement()();
-  TextColumn get publicId => text().unique()();
-  TextColumn get sourceType => text()();
-  TextColumn get locator => text()();
-  TextColumn get locatorKey => text()();
-  TextColumn get displayName => text()();
-  BoolColumn get recursive => boolean().withDefault(const Constant(true))();
-  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
-  IntColumn get scanGeneration => integer().withDefault(const Constant(0))();
-  DateTimeColumn get lastScanStartedAt => dateTime().nullable()();
-  DateTimeColumn get lastScanCompletedAt => dateTime().nullable()();
-  DateTimeColumn get createdAt => dateTime()();
-  DateTimeColumn get updatedAt => dateTime()();
-
-  @override
-  List<Set<Column<Object>>> get uniqueKeys => [
-    {sourceType, locatorKey},
-  ];
-}
-
-@DriftDatabase(tables: [LibraryRoots])
+@DriftDatabase(
+  tables: [
+    LibraryRoots,
+    ScanRuns,
+    MediaFiles,
+    ArtworkAssets,
+    Artists,
+    Albums,
+    Tracks,
+    TrackArtists,
+    Genres,
+    TrackGenres,
+  ],
+  include: {'library_search.drift'},
+)
 final class MediaLibraryDatabase extends _$MediaLibraryDatabase {
   MediaLibraryDatabase(super.executor);
+
   @override
   int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON;');
+    },
+  );
 }
