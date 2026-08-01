@@ -1,0 +1,40 @@
+name: Windows CI
+
+on:
+  push:
+    branches: [main, 'agent/**']
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.8'
+          channel: stable
+          cache: true
+      - run: flutter --version
+      - run: dart --version
+      - run: flutter pub get
+      - run: dart run tools/test_media_generator/generate.dart
+      - run: dart format --output=none --set-exit-if-changed apps packages tools
+      - run: flutter analyze
+      - run: dart test packages/playback_runtime
+      - run: dart test packages/platform_bridge
+      - name: Build debug bundle for libmpv integration tests
+        run: flutter build windows --debug
+        working-directory: apps/player_app
+      - name: Real libmpv decoding tests (null output)
+        shell: pwsh
+        run: |
+          $env:Path = "${{ github.workspace }}\apps\player_app\build\windows\x64\runner\Debug;$env:Path"
+          dart test packages/playback_engine_mpv
+      - run: flutter test apps/player_app
+      - run: flutter build windows --release
+        working-directory: apps/player_app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MpvPlay-windows-release
+          path: apps/player_app/build/windows/x64/runner/Release

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Added deterministic original test audio and real libmpv silent integration tests.
+- Added adapter-local null audio output configuration for CI.
+- Added Windows GitHub Actions validation and release artifact workflow.
+- Split application bootstrap, providers, app shell, and player presentation.
+
 ## 0.1.0
 
 - Windows local multi-file import and libmpv-backed playback.
