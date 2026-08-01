@@ -1,0 +1,36 @@
+﻿
+# Flutter / Dart generated files
+.dart_tool/
+**/.dart_tool/
+**/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Local runtime data
+**/logs/
+**/logs/*.jsonl
+**/session.json
+
+# Local secrets and signing material
+.env
+.env.*
+*.pfx
+*.p12
+*.pem
+*.key
+
+
+
+
+
+# Local repository bootstrap helpers
+create_and_push_mpvplay*.ps1

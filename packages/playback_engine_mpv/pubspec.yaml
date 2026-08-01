@@ -1,0 +1,12 @@
+name: playback_engine_mpv
+version: 0.1.0
+publish_to: none
+environment:
+  sdk: ^3.12.0
+resolution: workspace
+dependencies:
+  media_kit: ^1.2.6
+  media_kit_libs_windows_audio: ^1.0.9
+  playback_engine_api: any
+  player_core: any
+
