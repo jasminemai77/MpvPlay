@@ -11,7 +11,22 @@ const _bitsPerSample = 16;
 const _generatorVersion = '1';
 
 Future<void> main() async {
-  final output = Directory('test_media/generated');
+  final compressed = await generateTestMedia();
+  stdout.writeln('compressed formats: ${compressed['status']}');
+}
+
+typedef FfmpegProcessRunner =
+    Future<ProcessResult> Function(
+      String executable,
+      List<String> arguments, {
+      bool runInShell,
+    });
+
+Future<Map<String, String>> generateTestMedia({
+  Directory? outputDirectory,
+  FfmpegProcessRunner? processRunner,
+}) async {
+  final output = outputDirectory ?? Directory('test_media/generated');
   await output.create(recursive: true);
 
   final files = <_Fixture>[
@@ -72,7 +87,11 @@ Future<void> main() async {
     ..add(await _describe(truncated, 'intentionally truncated WAV input'))
     ..add(await _describe(random, 'deterministic non-media input'));
 
-  final compressed = await _tryFfmpeg(output, tone);
+  final compressed = await _tryFfmpeg(
+    output,
+    tone,
+    processRunner: processRunner,
+  );
   await File(
     '${output.path}${Platform.pathSeparator}manifest.json',
   ).writeAsString(
@@ -94,7 +113,7 @@ Future<void> main() async {
   for (final entry in manifestFiles) {
     stdout.writeln('${entry['name']} ${entry['sha256']}');
   }
-  stdout.writeln('compressed formats: ${compressed['status']}');
+  return compressed;
 }
 
 final class _Fixture {
@@ -190,8 +209,25 @@ Future<Map<String, Object?>> _describe(
   };
 }
 
-Future<Map<String, String>> _tryFfmpeg(Directory output, File tone) async {
-  final check = await Process.run('ffmpeg', const ['-version']);
+Future<Map<String, String>> _tryFfmpeg(
+  Directory output,
+  File tone, {
+  FfmpegProcessRunner? processRunner,
+}) async {
+  final runner = processRunner ?? _runProcess;
+  ProcessResult check;
+
+  try {
+    check = await runner('ffmpeg', const [
+      '-version',
+    ], runInShell: Platform.isWindows);
+  } on ProcessException catch (error) {
+    return {
+      'status': 'SKIPPED',
+      'reason': 'ffmpeg unavailable: ${error.message}',
+    };
+  }
+
   if (check.exitCode != 0) {
     return {'status': 'SKIPPED', 'reason': 'ffmpeg unavailable'};
   }
@@ -205,14 +241,24 @@ Future<Map<String, String>> _tryFfmpeg(Directory output, File tone) async {
   for (final entry in formats.entries) {
     final destination =
         '${output.path}${Platform.pathSeparator}tone.${entry.key}';
-    final result = await Process.run('ffmpeg', [
-      '-y',
-      '-i',
-      tone.path,
-      '-c:a',
-      entry.value,
-      destination,
-    ]);
+    ProcessResult result;
+
+    try {
+      result = await runner('ffmpeg', [
+        '-y',
+        '-i',
+        tone.path,
+        '-c:a',
+        entry.value,
+        destination,
+      ], runInShell: Platform.isWindows);
+    } on ProcessException catch (error) {
+      return {
+        'status': 'SKIPPED',
+        'reason': 'ffmpeg execution failed: ${error.message}',
+      };
+    }
+
     if (result.exitCode != 0) {
       return {
         'status': 'SKIPPED',
@@ -222,3 +268,9 @@ Future<Map<String, String>> _tryFfmpeg(Directory output, File tone) async {
   }
   return {'status': 'GENERATED'};
 }
+
+Future<ProcessResult> _runProcess(
+  String executable,
+  List<String> arguments, {
+  bool runInShell = false,
+}) => Process.run(executable, arguments, runInShell: runInShell);
