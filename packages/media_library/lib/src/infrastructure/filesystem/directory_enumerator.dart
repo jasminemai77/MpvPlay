@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
+
 import 'path_normalizer.dart';
 import 'file_identity_provider.dart';
 
@@ -13,6 +15,7 @@ final class EnumeratedAudioFile {
     required this.extension,
     required this.stat,
     required this.platformFileId,
+    required this.quickFingerprint,
   });
   final File file;
   final String locator;
@@ -22,9 +25,17 @@ final class EnumeratedAudioFile {
   final String extension;
   final FileStat stat;
   final String? platformFileId;
+  final String? quickFingerprint;
 }
 
-final class DirectoryEnumerator {
+abstract interface class AudioFileEnumerator {
+  Stream<EnumeratedAudioFile> enumerate({
+    required String root,
+    required bool recursive,
+  });
+}
+
+final class DirectoryEnumerator implements AudioFileEnumerator {
   DirectoryEnumerator({
     WindowsPathNormalizer? normalizer,
     FileIdentityProvider? identityProvider,
@@ -52,6 +63,7 @@ final class DirectoryEnumerator {
     'wv',
   };
 
+  @override
   Stream<EnumeratedAudioFile> enumerate({
     required String root,
     required bool recursive,
@@ -71,6 +83,7 @@ final class DirectoryEnumerator {
       final extension = name.substring(dot + 1).toLowerCase();
       if (!supportedExtensions.contains(extension)) continue;
       final locator = _normalizer.normalizeLocator(entity.path);
+      final stat = await entity.stat();
       yield EnumeratedAudioFile(
         file: entity,
         locator: locator,
@@ -78,11 +91,29 @@ final class DirectoryEnumerator {
         relativePath: _normalizer.relativeToRoot(root, locator),
         fileName: name,
         extension: extension,
-        stat: await entity.stat(),
+        stat: stat,
         platformFileId: await _identityProvider.getPlatformFileId(
           Uri.file(locator, windows: true),
         ),
+        quickFingerprint: await _quickFingerprint(entity, stat),
       );
+    }
+  }
+
+  /// A rename candidate only: it is never a durable content identity.
+  Future<String?> _quickFingerprint(File file, FileStat stat) async {
+    try {
+      final handle = await file.open();
+      try {
+        final bytes = await handle.read(
+          stat.size < 64 * 1024 ? stat.size : 64 * 1024,
+        );
+        return '${stat.size}:${sha256.convert(bytes)}';
+      } finally {
+        await handle.close();
+      }
+    } on FileSystemException {
+      return null;
     }
   }
 }

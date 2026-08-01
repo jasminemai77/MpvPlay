@@ -45,27 +45,32 @@ final class ScanCancellationToken {
 final class LibraryScanCoordinator {
   LibraryScanCoordinator(
     this._database, {
-    DirectoryEnumerator? enumerator,
+    AudioFileEnumerator? enumerator,
     TrackMetadataReader? metadataReader,
   }) : _enumerator = enumerator ?? DirectoryEnumerator(),
        _metadataReader = metadataReader ?? AudioMetadataReaderAdapter();
 
   final MediaLibraryDatabase _database;
-  final DirectoryEnumerator _enumerator;
+  final AudioFileEnumerator _enumerator;
   final TrackMetadataReader _metadataReader;
   final _progress = StreamController<LibraryScanProgress>.broadcast();
   final _active = <String, ScanCancellationToken>{};
+  final _runs = <String, Future<void>>{};
+  bool _closed = false;
   static const _uuid = Uuid();
 
   Stream<LibraryScanProgress> get progress => _progress.stream;
 
   ScanCancellationToken scan(String rootPublicId) {
+    if (_closed) throw StateError('LibraryScanCoordinator is closed');
     if (_active.containsKey(rootPublicId)) {
       throw StateError('A scan is already active for root $rootPublicId');
     }
     final token = ScanCancellationToken();
     _active[rootPublicId] = token;
-    unawaited(_run(rootPublicId, token));
+    final run = _run(rootPublicId, token);
+    _runs[rootPublicId] = run;
+    unawaited(run.whenComplete(() => _runs.remove(rootPublicId)));
     return token;
   }
 
@@ -73,12 +78,19 @@ final class LibraryScanCoordinator {
     String rootPublicId, {
     ScanCancellationToken? token,
   }) async {
+    if (_closed) throw StateError('LibraryScanCoordinator is closed');
     final actualToken = token ?? ScanCancellationToken();
     if (_active.containsKey(rootPublicId)) {
       throw StateError('A scan is already active for root $rootPublicId');
     }
     _active[rootPublicId] = actualToken;
-    await _run(rootPublicId, actualToken);
+    final run = _run(rootPublicId, actualToken);
+    _runs[rootPublicId] = run;
+    try {
+      await run;
+    } finally {
+      _runs.remove(rootPublicId);
+    }
   }
 
   Future<void> _run(String rootPublicId, ScanCancellationToken token) async {
@@ -117,13 +129,34 @@ final class LibraryScanCoordinator {
         ),
       );
       _emit(rootPublicId, domain.ScanStatus.enumerating, generation);
+      final files = <EnumeratedAudioFile>[];
       await for (final file in _enumerator.enumerate(
         root: root.locator,
         recursive: root.recursive,
       )) {
         if (token.isCancelled) throw _ScanCancelled();
+        files.add(file);
+      }
+      final repeatedFileIds = <String>{};
+      final fileIdCounts = <String, int>{};
+      for (final file in files) {
+        final id = file.platformFileId;
+        if (id != null) fileIdCounts[id] = (fileIdCounts[id] ?? 0) + 1;
+      }
+      fileIdCounts.forEach((id, count) {
+        if (count > 1) repeatedFileIds.add(id);
+      });
+      for (final file in files) {
+        if (token.isCancelled) throw _ScanCancelled();
         discovered++;
-        final result = await _upsertFile(root, generation, file);
+        final result = await _upsertFile(
+          root,
+          generation,
+          file,
+          allowPlatformIdentityMatch: !repeatedFileIds.contains(
+            file.platformFileId,
+          ),
+        );
         inserted += result.inserted;
         updated += result.updated;
         unchanged += result.unchanged;
@@ -265,8 +298,9 @@ final class LibraryScanCoordinator {
   Future<_UpsertResult> _upsertFile(
     LibraryRoot root,
     int generation,
-    EnumeratedAudioFile file,
-  ) async {
+    EnumeratedAudioFile file, {
+    required bool allowPlatformIdentityMatch,
+  }) async {
     var existing =
         await (_database.select(_database.mediaFiles)..where(
               (row) =>
@@ -274,12 +308,27 @@ final class LibraryScanCoordinator {
                   row.locatorKey.equals(file.locatorKey),
             ))
             .getSingleOrNull();
-    if (existing == null && file.platformFileId != null) {
+    if (existing == null &&
+        allowPlatformIdentityMatch &&
+        file.platformFileId != null) {
       final sameIdentity = await (_database.select(
         _database.mediaFiles,
       )..where((row) => row.platformFileId.equals(file.platformFileId!))).get();
       if (sameIdentity.length == 1) {
         existing = sameIdentity.single;
+      }
+    }
+    if (existing == null && file.quickFingerprint != null) {
+      final candidates =
+          await (_database.select(_database.mediaFiles)..where(
+                (row) =>
+                    row.rootId.equals(root.rowId) &
+                    row.quickFingerprint.equals(file.quickFingerprint!) &
+                    row.lastSeenGeneration.isSmallerThanValue(generation),
+              ))
+              .get();
+      if (candidates.length == 1) {
+        existing = candidates.single;
       }
     }
     final now = DateTime.now().toUtc();
@@ -300,6 +349,7 @@ final class LibraryScanCoordinator {
                   .toUtc()
                   .microsecondsSinceEpoch,
               platformFileId: Value(file.platformFileId),
+              quickFingerprint: Value(file.quickFingerprint),
               availabilityState: 'available',
               metadataState: 'pending',
               lastSeenGeneration: generation,
@@ -364,6 +414,7 @@ final class LibraryScanCoordinator {
           file.stat.modified.toUtc().microsecondsSinceEpoch,
         ),
         platformFileId: Value(file.platformFileId),
+        quickFingerprint: Value(file.quickFingerprint),
         availabilityState: const Value('available'),
         lastSeenGeneration: Value(generation),
         lastSeenAt: Value(now),
@@ -453,6 +504,10 @@ final class LibraryScanCoordinator {
               position: position,
             ),
           );
+    }
+    if (metadata.albumArtist case final albumArtist?
+        when albumArtist.trim().isNotEmpty) {
+      albumArtistId = await _ensureArtist(albumArtist, now);
     }
     int? albumId;
     if (metadata.album case final album? when album.trim().isNotEmpty) {
@@ -586,7 +641,15 @@ final class LibraryScanCoordinator {
     ),
   );
 
-  Future<void> close() => _progress.close();
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    for (final token in _active.values) {
+      token.cancel();
+    }
+    await Future.wait(_runs.values.toList(growable: false));
+    await _progress.close();
+  }
 }
 
 final class _UpsertResult {
