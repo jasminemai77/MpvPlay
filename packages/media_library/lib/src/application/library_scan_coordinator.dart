@@ -56,6 +56,7 @@ final class LibraryScanCoordinator {
   final _progress = StreamController<LibraryScanProgress>.broadcast();
   final _active = <String, ScanCancellationToken>{};
   final _runs = <String, Future<void>>{};
+  String? _activeRootId;
   bool _closed = false;
   static const _uuid = Uuid();
 
@@ -63,11 +64,12 @@ final class LibraryScanCoordinator {
 
   ScanCancellationToken scan(String rootPublicId) {
     if (_closed) throw StateError('LibraryScanCoordinator is closed');
-    if (_active.containsKey(rootPublicId)) {
-      throw StateError('A scan is already active for root $rootPublicId');
+    if (_activeRootId != null) {
+      throw StateError('A scan is already active for root $_activeRootId');
     }
     final token = ScanCancellationToken();
     _active[rootPublicId] = token;
+    _activeRootId = rootPublicId;
     final run = _run(rootPublicId, token);
     _runs[rootPublicId] = run;
     unawaited(run.whenComplete(() => _runs.remove(rootPublicId)));
@@ -80,10 +82,11 @@ final class LibraryScanCoordinator {
   }) async {
     if (_closed) throw StateError('LibraryScanCoordinator is closed');
     final actualToken = token ?? ScanCancellationToken();
-    if (_active.containsKey(rootPublicId)) {
-      throw StateError('A scan is already active for root $rootPublicId');
+    if (_activeRootId != null) {
+      throw StateError('A scan is already active for root $_activeRootId');
     }
     _active[rootPublicId] = actualToken;
+    _activeRootId = rootPublicId;
     final run = _run(rootPublicId, actualToken);
     _runs[rootPublicId] = run;
     try {
@@ -293,7 +296,15 @@ final class LibraryScanCoordinator {
       );
     } finally {
       _active.remove(rootPublicId);
+      _activeRootId = null;
     }
+  }
+
+  Future<void> cancelActiveScan() async {
+    final rootId = _activeRootId;
+    if (rootId == null) return;
+    _active[rootId]?.cancel();
+    await _runs[rootId];
   }
 
   Future<_UpsertResult> _upsertFile(

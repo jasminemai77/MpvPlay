@@ -1,5 +1,11 @@
 # Decisions
 
+## D-011: v0.5 root lifecycle reuses enabled
+
+`library_roots.enabled` already independently represents user-controlled
+disablement. Filesystem reachability remains a separate runtime scan outcome,
+so Schema v3 remains unchanged and no v4 migration is required.
+
 ## D-010: v0.4 queue authority
 
 PlaybackRuntime owns base queue, actual play order, current entry and traversal
