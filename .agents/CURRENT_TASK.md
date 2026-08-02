@@ -1,20 +1,20 @@
 # Current Task
 
-Version: v0.3
-Task: Favorites and user playlists
-Status: COMPLETED
-Gate: ACCEPTED
-Architecture Baseline: Media Library 2.0 + Collections Schema v2
-Base Commit: ba1f717
+Version: v0.3.1
+Task: Playback history
+Status: IN_PROGRESS
+Gate: NOT_RUN
+Architecture Baseline: Media Library 2.0 + Collections Schema v2 + Playback History Schema v3
+Base Commit: c29b222
 
 Scope:
-- persistent track favorites
-- user playlists and ordered playlist tracks
-- Drift Schema v2 migration
-- collection-to-playback mapping through the existing App mapper
+- durable playback start history and cumulative play counts
+- Drift Schema v3 migration and retention
+- App-layer PlaybackClient snapshot observation
+- history-to-playback mapping through the existing App mapper
 
 Forbidden:
 - Android
-- playback history and recommendations
+- recommendations
 - online playlists and cloud sync
 - queue editing or queue-to-playlist conversion

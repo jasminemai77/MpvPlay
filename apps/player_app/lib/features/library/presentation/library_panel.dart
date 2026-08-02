@@ -10,6 +10,7 @@ import '../../collections/application/collections_providers.dart';
 import '../../collections/presentation/add_to_playlist_dialog.dart';
 import '../../collections/presentation/favorites_page.dart';
 import '../../collections/presentation/playlists_page.dart';
+import '../../history/presentation/playback_history_page.dart';
 
 class LibraryPanel extends ConsumerStatefulWidget {
   const LibraryPanel({super.key, required this.onPlay});
@@ -93,6 +94,9 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
                       _LibraryDestination.artists => ArtistPage(
                         onPlayAll: _playAll,
                       ),
+                      _LibraryDestination.history => PlaybackHistoryPage(
+                        onPlay: widget.onPlay,
+                      ),
                     };
                     Navigator.of(
                       context,
@@ -106,6 +110,10 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
                     PopupMenuItem(
                       value: _LibraryDestination.playlists,
                       child: Text('Playlists'),
+                    ),
+                    PopupMenuItem(
+                      value: _LibraryDestination.history,
+                      child: Text('History'),
                     ),
                     PopupMenuItem(
                       value: _LibraryDestination.albums,
@@ -246,4 +254,4 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
   }
 }
 
-enum _LibraryDestination { favorites, playlists, albums, artists }
+enum _LibraryDestination { favorites, playlists, history, albums, artists }

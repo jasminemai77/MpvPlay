@@ -77,3 +77,11 @@ collection-to-playback bridge.
 A track can appear once per user playlist. Position values use gaps of 1024;
 reorder validates the exact current track set and updates temporary positions
 and final positions inside one short transaction.
+
+## D-011: Playback history is observed in the App layer
+
+`AppPlaybackHistoryObserver` listens to PlaybackClient snapshots and writes
+only the first `playing` transition of a library-track playback cycle through
+MediaLibraryFacade. PlaybackRuntime and media_library remain mutually unaware.
+History events use `tracks.public_id`; a unique playback session identifier
+makes persistence idempotent. Retention trims events, never cumulative counts.
