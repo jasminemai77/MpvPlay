@@ -7,6 +7,7 @@ import 'package:media_library/media_library.dart';
 
 import '../../library/application/library_playback_mapper.dart';
 import '../../library/presentation/library_panel.dart';
+import '../../settings/presentation/settings_page.dart';
 import '../application/playback_providers.dart';
 
 class PlayerPage extends ConsumerStatefulWidget {
@@ -86,6 +87,13 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       appBar: AppBar(
         title: const Text('MpvPlay'),
         actions: [
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+            ),
+          ),
           IconButton(
             tooltip: snapshot.shuffleEnabled
                 ? 'Disable shuffle'

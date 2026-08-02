@@ -41,6 +41,23 @@ final class ScanCancellationToken {
   void cancel() => _cancelled = true;
 }
 
+final class LibraryRootScanResult {
+  const LibraryRootScanResult({
+    required this.rootId,
+    required this.status,
+    this.message,
+  });
+  final String rootId;
+  final domain.ScanStatus status;
+  final String? message;
+}
+
+final class ScanAllResult {
+  const ScanAllResult({required this.results, required this.cancelled});
+  final List<LibraryRootScanResult> results;
+  final bool cancelled;
+}
+
 /// Owns only transient scan state. Persistent library rows remain Drift-owned.
 final class LibraryScanCoordinator {
   LibraryScanCoordinator(
@@ -56,18 +73,38 @@ final class LibraryScanCoordinator {
   final _progress = StreamController<LibraryScanProgress>.broadcast();
   final _active = <String, ScanCancellationToken>{};
   final _runs = <String, Future<void>>{};
+  String? _activeRootId;
+  String? _cancellingRootId;
+  final _latestProgress = <String, LibraryScanProgress>{};
   bool _closed = false;
   static const _uuid = Uuid();
 
   Stream<LibraryScanProgress> get progress => _progress.stream;
 
+  /// Process-local state. Final results remain persisted in the scan-runs table.
+  domain.LibraryRootScanState? rootState(String rootId) {
+    if (_activeRootId == rootId) {
+      return _cancellingRootId == rootId
+          ? domain.LibraryRootScanState.cancelling
+          : domain.LibraryRootScanState.scanning;
+    }
+    return switch (_latestProgress[rootId]?.status) {
+      domain.ScanStatus.failed => domain.LibraryRootScanState.failed,
+      domain.ScanStatus.cancelled => domain.LibraryRootScanState.cancelled,
+      domain.ScanStatus.completed || domain.ScanStatus.completedWithIssues =>
+        domain.LibraryRootScanState.completed,
+      _ => null,
+    };
+  }
+
   ScanCancellationToken scan(String rootPublicId) {
     if (_closed) throw StateError('LibraryScanCoordinator is closed');
-    if (_active.containsKey(rootPublicId)) {
-      throw StateError('A scan is already active for root $rootPublicId');
+    if (_activeRootId != null) {
+      throw StateError('A scan is already active for root $_activeRootId');
     }
     final token = ScanCancellationToken();
     _active[rootPublicId] = token;
+    _activeRootId = rootPublicId;
     final run = _run(rootPublicId, token);
     _runs[rootPublicId] = run;
     unawaited(run.whenComplete(() => _runs.remove(rootPublicId)));
@@ -80,10 +117,11 @@ final class LibraryScanCoordinator {
   }) async {
     if (_closed) throw StateError('LibraryScanCoordinator is closed');
     final actualToken = token ?? ScanCancellationToken();
-    if (_active.containsKey(rootPublicId)) {
-      throw StateError('A scan is already active for root $rootPublicId');
+    if (_activeRootId != null) {
+      throw StateError('A scan is already active for root $_activeRootId');
     }
     _active[rootPublicId] = actualToken;
+    _activeRootId = rootPublicId;
     final run = _run(rootPublicId, actualToken);
     _runs[rootPublicId] = run;
     try {
@@ -106,6 +144,7 @@ final class LibraryScanCoordinator {
       root = await (_database.select(
         _database.libraryRoots,
       )..where((r) => r.publicId.equals(rootPublicId))).getSingle();
+      if (!root.enabled) throw StateError('Library root is disabled');
       generation = root.scanGeneration + 1;
       final now = DateTime.now().toUtc();
       scanRunId = await _database
@@ -292,7 +331,63 @@ final class LibraryScanCoordinator {
       );
     } finally {
       _active.remove(rootPublicId);
+      _activeRootId = null;
+      _cancellingRootId = null;
     }
+  }
+
+  Future<void> cancelActiveScan() async {
+    final rootId = _activeRootId;
+    if (rootId == null) return;
+    _cancellingRootId = rootId;
+    final previous = _latestProgress[rootId];
+    if (previous != null) {
+      _emit(rootId, previous.status, previous.generation);
+    }
+    _active[rootId]?.cancel();
+    await _runs[rootId];
+  }
+
+  bool get hasActiveScan => _activeRootId != null;
+  String? get activeRootId => _activeRootId;
+
+  /// Stable, serial scan-all policy. A failed root never prevents later roots.
+  Future<ScanAllResult> scanAllEnabledRoots() async {
+    if (_activeRootId != null) {
+      throw StateError('A scan is already active for root $_activeRootId');
+    }
+    final roots =
+        await (_database.select(_database.libraryRoots)
+              ..where((root) => root.enabled.equals(true))
+              ..orderBy([(root) => OrderingTerm.asc(root.locatorKey)]))
+            .get();
+    final results = <LibraryRootScanResult>[];
+    for (final root in roots) {
+      var finalStatus = domain.ScanStatus.completed;
+      String? message;
+      final subscription = progress
+          .where((event) => event.rootId == root.publicId)
+          .listen((event) {
+            finalStatus = event.status;
+            message = event.message;
+          });
+      try {
+        await scanAndWait(root.publicId);
+      } finally {
+        await subscription.cancel();
+      }
+      results.add(
+        LibraryRootScanResult(
+          rootId: root.publicId,
+          status: finalStatus,
+          message: message,
+        ),
+      );
+      if (finalStatus == domain.ScanStatus.cancelled) {
+        return ScanAllResult(results: results, cancelled: true);
+      }
+    }
+    return ScanAllResult(results: results, cancelled: false);
   }
 
   Future<_UpsertResult> _upsertFile(
@@ -626,8 +721,8 @@ final class LibraryScanCoordinator {
     int missing = 0,
     int failed = 0,
     String? message,
-  }) => _progress.add(
-    LibraryScanProgress(
+  }) {
+    final progress = LibraryScanProgress(
       rootId: rootId,
       status: status,
       generation: generation,
@@ -638,8 +733,10 @@ final class LibraryScanCoordinator {
       missingCount: missing,
       failedCount: failed,
       message: message,
-    ),
-  );
+    );
+    _latestProgress[rootId] = progress;
+    _progress.add(progress);
+  }
 
   Future<void> close() async {
     if (_closed) return;

@@ -1,19 +1,19 @@
 # MpvPlay Agent Context Handoff
 
-## v0.4 in progress
+## v0.5 accepted; final delivery hardening in progress
 
-v0.3.1 is ACCEPTED. v0.4 adds playback modes and queue management while Media
-Library Schema v3 remains unchanged. PlaybackRuntime is the sole authority for
-queue entries, actual order, current entry, repeat/shuffle and restore. Queue
-entry identity is UUIDv7 per enqueue. JSON session storage, not Drift,
+v0.4 is ACCEPTED_WITH_RISK. v0.5 adds durable settings and reversible local
+library-root management while Media Library Schema v3 remains unchanged.
+PlaybackRuntime remains the sole authority for queue entries, actual order,
+current entry, repeat/shuffle and restore. JSON session storage, not Drift,
 persists runtime queue state. UI does not own a second mutable queue;
 LibraryPlaybackMapper remains the only app-layer bridge from library tracks.
 
 ## Project and version
 
 MpvPlay is a Windows-first Flutter music player. v0.1.1 is complete; the
-current task is v0.4 playback modes and queue management, built on the frozen Media Library 2.0
-baseline.
+current task is v0.5 settings and library management, built on the frozen
+Media Library 2.0 baseline.
 
 ## Architecture
 
@@ -54,8 +54,17 @@ authority. Only the app-level mapper may depend on library and playback models.
 The local-library core loop is implemented: Schema v1, metadata parsing,
 Windows File ID rename preservation, album/artist/genre relations, UI
 browsing, FTS, and library-to-playback mapping. `AppBootstrap` owns one
-database/facade/scanner and disposes them with the playback snapshot
-subscription and playback client.
+database/facade/scanner, cancels and drains scan work before closing the
+database, and keeps settings writes and playback history durable.
+
+v0.5 uses settings schema v1 and keeps media-library schema v3. A Track owns
+one concrete MediaFile; duplicate content under two roots remains independent
+Tracks. The UI only consumes the facade and application providers, never Drift
+rows or DAOs. Failed and cancelled scans never run Missing Finalization.
+
+The accepted Gate is not reopened for delivery hardening. The final follow-up
+adds `dart test packages/app_settings` to Windows CI only; it changes neither
+the accepted architecture, data model, nor user-visible behavior.
 
 v0.2 is complete with Gate `ACCEPTED_WITH_RISK`; v0.3 favorites and user
 playlists is complete with Gate `ACCEPTED`. v0.3.1 playback history is complete

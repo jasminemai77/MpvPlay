@@ -69,6 +69,63 @@ void main() {
   });
 
   test(
+    'a disabled root is not scanned and can be re-enabled without a new root',
+    () async {
+      final root = (await facade.query.listRoots()).single;
+      await facade.removeRoot(root.id);
+      expect((await facade.query.listRoots()).single.enabled, isFalse);
+      await expectLater(coordinator.scanAndWait(root.id), completes);
+      final restored = await facade.addDirectoryRoot(
+        locator: directory.path,
+        displayName: 'Fixture root',
+      );
+      expect(restored.id, root.id);
+      expect((await facade.query.listRoots()).single.enabled, isTrue);
+    },
+  );
+
+  test(
+    'disable and recovery preserve the concrete track public identity',
+    () async {
+      final audio = File('${directory.path}${Platform.pathSeparator}song.mp3');
+      await audio.writeAsBytes([1]);
+      final root = (await facade.query.listRoots()).single;
+      await coordinator.scanAndWait(root.id);
+      final original = (await facade.query.listTracks()).single;
+
+      await facade.removeRoot(root.id);
+      final disabled = (await facade.query.listTracks()).single;
+      expect(disabled.id, original.id);
+      expect(disabled.available, isFalse);
+
+      await facade.setRootEnabled(root.id, true);
+      await coordinator.scanAndWait(root.id);
+      final restored = (await facade.query.listTracks()).single;
+      expect(restored.id, original.id);
+      expect(restored.available, isTrue);
+    },
+  );
+
+  test(
+    'scan all uses enabled roots only and returns per-root results',
+    () async {
+      final second = await Directory.systemTemp.createTemp(
+        'mpvplay-second-root-',
+      );
+      addTearDown(() => second.delete(recursive: true));
+      final first = (await facade.query.listRoots()).single;
+      final secondRoot = await facade.addDirectoryRoot(
+        locator: second.path,
+        displayName: 'Second',
+      );
+      await facade.removeRoot(first.id);
+      final result = await coordinator.scanAllEnabledRoots();
+      expect(result.cancelled, isFalse);
+      expect(result.results.map((entry) => entry.rootId), [secondRoot.id]);
+    },
+  );
+
+  test(
     'a later scan cannot overtake an active generation for the same root',
     () async {
       final paused = _PausedEnumerator();

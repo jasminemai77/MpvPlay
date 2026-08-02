@@ -7,6 +7,7 @@ dependencies:
 dev_dependencies:
   test: ^1.25.0
 workspace:
+  - packages/app_settings
   - apps/player_app
   - packages/player_core
   - packages/playback_protocol

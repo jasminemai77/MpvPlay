@@ -5,8 +5,11 @@ final class WindowsPathNormalizer {
   const WindowsPathNormalizer();
 
   String normalizeLocator(String value) {
-    final absolute = File(value).absolute.path.replaceAll('/', r'\\');
-    return _trimTrailingSeparator(absolute);
+    if (value.trim().isEmpty) {
+      throw ArgumentError.value(value, 'value', 'must not be empty');
+    }
+    final absolute = File(value).absolute.path.replaceAll('/', '\\');
+    return _trimTrailingSeparator(_collapseSegments(absolute));
   }
 
   String locatorKey(String value) => normalizeLocator(value).toLowerCase();
@@ -30,7 +33,28 @@ final class WindowsPathNormalizer {
   }
 
   String _trimTrailingSeparator(String value) {
-    if (value.length <= 3) return value;
-    return value.endsWith(r'\\') ? value.substring(0, value.length - 1) : value;
+    var result = value;
+    while (result.length > 3 && result.endsWith('\\')) {
+      result = result.substring(0, result.length - 1);
+    }
+    return result;
+  }
+
+  String _collapseSegments(String value) {
+    final parts = value.split('\\');
+    final result = <String>[];
+    for (final part in parts) {
+      if (part.isEmpty && result.isEmpty) {
+        result.add(part);
+        continue;
+      }
+      if (part.isEmpty || part == '.') continue;
+      if (part == '..') {
+        if (result.length > 1) result.removeLast();
+        continue;
+      }
+      result.add(part);
+    }
+    return result.join('\\');
   }
 }

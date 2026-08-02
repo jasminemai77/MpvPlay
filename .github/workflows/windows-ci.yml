@@ -39,6 +39,8 @@ jobs:
         run: |
           $env:Path = "${{ github.workspace }}\apps\player_app\build\windows\x64\runner\Debug;$env:Path"
           dart test packages/playback_engine_mpv
+      - name: Run app settings tests
+        run: dart test packages/app_settings
       - run: flutter test apps/player_app
       - run: flutter build windows --release
         working-directory: apps/player_app
