@@ -2,8 +2,8 @@
 
 Version: v0.4
 Task: Playback modes and queue management
-Status: IN_PROGRESS
-Gate: NOT_RUN
+Status: COMPLETED
+Gate: ACCEPTED
 Architecture Baseline: Media Library 2.0 + Collections Schema v2 + Playback History Schema v3
 Base Commit: bfcf088
 Media Library Schema: v3 unchanged
