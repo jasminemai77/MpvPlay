@@ -85,6 +85,12 @@ final class LibraryTrackDao {
               ),
             ),
             innerJoin(
+              _database.libraryRoots,
+              _database.libraryRoots.rowId.equalsExp(
+                _database.mediaFiles.rootId,
+              ),
+            ),
+            innerJoin(
               _database.trackArtists,
               _database.trackArtists.trackId.equalsExp(_database.tracks.rowId),
             ),
@@ -100,11 +106,16 @@ final class LibraryTrackDao {
           _database.mediaFiles,
           _database.mediaFiles.rowId.equalsExp(_database.tracks.mediaFileId),
         ),
+        innerJoin(
+          _database.libraryRoots,
+          _database.libraryRoots.rowId.equalsExp(_database.mediaFiles.rootId),
+        ),
       ]);
 
   domain.LibraryTrack mapJoinedRow(TypedResult row) {
     final track = row.readTable(_database.tracks);
     final mediaFile = row.readTable(_database.mediaFiles);
+    final root = row.readTable(_database.libraryRoots);
     return domain.LibraryTrack(
       id: track.publicId,
       mediaFileId: mediaFile.publicId,
@@ -115,7 +126,7 @@ final class LibraryTrackDao {
           ? null
           : Duration(milliseconds: track.durationMs!),
       locator: Uri.file(mediaFile.locator, windows: true),
-      available: mediaFile.availabilityState == 'available',
+      available: root.enabled && mediaFile.availabilityState == 'available',
     );
   }
 }
