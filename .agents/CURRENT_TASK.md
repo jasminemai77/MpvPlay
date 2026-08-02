@@ -2,8 +2,8 @@
 
 Version: v0.5
 Task: Settings and library management
-Status: IN_PROGRESS
-Gate: NOT_RUN
+Status: COMPLETED
+Gate: ACCEPTED
 Architecture Baseline: Media Library 2.0 + Collections Schema v2 + Playback History Schema v3
 Base Commit: d824f4c
 Application Version: 0.5.0+6
