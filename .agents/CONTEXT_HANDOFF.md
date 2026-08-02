@@ -49,8 +49,9 @@ database/facade/scanner and disposes them with the playback snapshot
 subscription and playback client.
 
 v0.2 is complete with Gate `ACCEPTED_WITH_RISK`; v0.3 favorites and user
-playlists is complete with Gate `ACCEPTED`. v0.3.1 is in progress. Drift/SQLite
-remains the sole durable authority for collections and history. The App-layer
+playlists is complete with Gate `ACCEPTED`. v0.3.1 playback history is complete
+with Gate `ACCEPTED`. Drift/SQLite remains the sole durable authority for
+collections and history. The App-layer
 history observer records only a library track's first `playing` snapshot in a
 cycle and never changes PlaybackRuntime state. The app-level
 `LibraryPlaybackMapper` remains the only history-to-playback bridge. Missing

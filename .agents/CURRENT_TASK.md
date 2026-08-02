@@ -2,8 +2,8 @@
 
 Version: v0.3.1
 Task: Playback history
-Status: IN_PROGRESS
-Gate: NOT_RUN
+Status: COMPLETED
+Gate: ACCEPTED
 Architecture Baseline: Media Library 2.0 + Collections Schema v2 + Playback History Schema v3
 Base Commit: c29b222
 

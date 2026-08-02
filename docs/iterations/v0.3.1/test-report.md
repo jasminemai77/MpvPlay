@@ -10,6 +10,10 @@ Local regression passed: 43 media-library tests, 11 PlaybackRuntime tests, 1
 platform bridge test, 8 real libmpv tests, and 7 Flutter tests. A Windows
 Release executable was also built locally.
 
+Remote evidence: Windows CI run 30730216674 passed source-generation drift
+checks, format, analysis, all regressions, real libmpv decoding, Flutter tests,
+Windows Release, and `MpvPlay-windows-release` artifact upload.
+
 Local regression passed: 43 media-library tests, 11 PlaybackRuntime tests, 1
 platform bridge test, 8 real libmpv tests, and 7 Flutter tests. A Windows
 Release executable was also built locally.

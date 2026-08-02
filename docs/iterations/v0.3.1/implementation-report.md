@@ -10,6 +10,12 @@ Local delivery evidence confirms Drift source generation has no pending output,
 workspace formatting and analysis pass, and the Windows Release executable was
 built successfully.
 
+## Version Gate
+
+Gate result: `ACCEPTED`. CI run 30730216674 confirms the data-preserving
+migration, playback-start semantics, observer isolation, existing media-library
+capabilities, Windows Release build, and release artifact requirements.
+
 Local delivery evidence confirms Drift source generation has no pending output,
 workspace formatting and analysis pass, and the Windows Release executable was
 built successfully.
