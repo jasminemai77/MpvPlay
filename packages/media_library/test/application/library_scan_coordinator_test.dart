@@ -68,6 +68,16 @@ void main() {
     expect(file.availabilityState, 'available');
   });
 
+  test('a disabled root is not scanned and can be re-enabled without a new root', () async {
+    final root = (await facade.query.listRoots()).single;
+    await facade.removeRoot(root.id);
+    expect((await facade.query.listRoots()).single.enabled, isFalse);
+    await expectLater(coordinator.scanAndWait(root.id), completes);
+    final restored = await facade.addDirectoryRoot(locator: directory.path, displayName: 'Fixture root');
+    expect(restored.id, root.id);
+    expect((await facade.query.listRoots()).single.enabled, isTrue);
+  });
+
   test(
     'a later scan cannot overtake an active generation for the same root',
     () async {
