@@ -2,15 +2,23 @@
 
 Result: **ACCEPTED**.
 
-Evidence for commit `ef2cf84767aee7b6e5549a3f991f2487126e00c4`:
+Pre-delivery HEAD: `15bd5470297b02b877d9aa7acedf4f5d2299703d`
 
-- Draft PR [#6](https://github.com/jasminemai77/MpvPlay/pull/6)
-- Windows CI runs 30740335937 and 30740337756 passed
-- `MpvPlay-windows-release` artifact was uploaded and is not expired
-  (21,593,652 bytes)
-- CI verified fixture generation, Drift source generation, formatting,
-  analysis, core package tests, native SQLite tests, real libmpv decoding,
-  Flutter tests, and the Windows Release build
+Validated CI: 30740598836 and 30740600057.
+
+Artifact:
+
+- Name: `MpvPlay-windows-release`
+- ID: `8831203335`
+- Size: 21,593,652 bytes
+- SHA-256: `8f4f6143ccadd1cce3cc0102a4a6d8ade66931c694fb9ab9ff39c32342be8409`
+
+Tests: Settings 6; Media Library 48; Runtime 14; Platform 1; real libmpv 8;
+Flutter 7; total 84.
+
+The final delivery follow-up adds `packages/app_settings` to Windows CI. This
+is delivery hardening only and does not alter the accepted v0.5 architecture,
+data model, or user-visible behavior.
 
 The Media Library remains Schema v3. v0.5 intentionally accepts the existing
 one-concrete-MediaFile-per-Track identity model; logical multi-location Tracks

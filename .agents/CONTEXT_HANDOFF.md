@@ -1,6 +1,6 @@
 # MpvPlay Agent Context Handoff
 
-## v0.5 in progress
+## v0.5 accepted; final delivery hardening in progress
 
 v0.4 is ACCEPTED_WITH_RISK. v0.5 adds durable settings and reversible local
 library-root management while Media Library Schema v3 remains unchanged.
@@ -61,6 +61,10 @@ v0.5 uses settings schema v1 and keeps media-library schema v3. A Track owns
 one concrete MediaFile; duplicate content under two roots remains independent
 Tracks. The UI only consumes the facade and application providers, never Drift
 rows or DAOs. Failed and cancelled scans never run Missing Finalization.
+
+The accepted Gate is not reopened for delivery hardening. The final follow-up
+adds `dart test packages/app_settings` to Windows CI only; it changes neither
+the accepted architecture, data model, nor user-visible behavior.
 
 v0.2 is complete with Gate `ACCEPTED_WITH_RISK`; v0.3 favorites and user
 playlists is complete with Gate `ACCEPTED`. v0.3.1 playback history is complete
