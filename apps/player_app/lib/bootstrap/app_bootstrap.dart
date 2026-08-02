@@ -13,6 +13,7 @@ import 'package:platform_bridge/platform_bridge.dart';
 import '../app/mpv_play_app.dart';
 import '../features/now_playing/application/playback_providers.dart';
 import '../features/library/application/library_providers.dart';
+import '../features/history/application/playback_history_observer.dart';
 
 final class AppBootstrap {
   AppBootstrap._(
@@ -20,12 +21,14 @@ final class AppBootstrap {
     this._initialSnapshot,
     this._library,
     this._scanner,
+    this._historyObserver,
     this._snapshotSubscription,
   );
   final PlaybackClient _client;
   final PlaybackSnapshot _initialSnapshot;
   final MediaLibraryFacade _library;
   final LibraryScanCoordinator _scanner;
+  final AppPlaybackHistoryObserver _historyObserver;
   final StreamSubscription<PlaybackSnapshot> _snapshotSubscription;
 
   static Future<AppBootstrap> create() async {
@@ -79,12 +82,18 @@ final class AppBootstrap {
         skippedItems: restored.skippedItems,
       );
     }
+    final client = InProcessPlaybackClient(runtime);
+    final historyObserver = AppPlaybackHistoryObserver.forLibrary(
+      snapshots: client.snapshots,
+      library: library,
+    );
     final snapshotSubscription = runtime.snapshots.listen(store.save);
     return AppBootstrap._(
-      InProcessPlaybackClient(runtime),
+      client,
       runtime.currentSnapshot,
       library,
       scanner,
+      historyObserver,
       snapshotSubscription,
     );
   }
@@ -107,6 +116,7 @@ final class AppBootstrap {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    await _historyObserver.close();
     await _snapshotSubscription.cancel();
     await _scanner.close();
     await _library.close();

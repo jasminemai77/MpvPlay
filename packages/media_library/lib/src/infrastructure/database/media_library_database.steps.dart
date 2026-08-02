@@ -1470,8 +1470,554 @@ i1.GeneratedColumn<int> _column_83(String aliasedName) =>
       type: i1.DriftSqlType.int,
       $customConstraints: 'NOT NULL',
     );
+
+final class Schema3 extends i0.VersionedSchema {
+  Schema3({required super.database}) : super(version: 3);
+  @override
+  late final List<i1.DatabaseSchemaEntity> entities = [
+    trackSearchFts,
+    libraryRoots,
+    scanRuns,
+    mediaFiles,
+    artworkAssets,
+    artists,
+    albums,
+    tracks,
+    trackArtists,
+    genres,
+    trackGenres,
+    favoriteTracks,
+    userPlaylists,
+    userPlaylistItems,
+    playbackHistoryEntries,
+    trackPlaybackStats,
+    mediaFilesRootAvailability,
+    mediaFilesRootLastSeenGeneration,
+    mediaFilesPlatformFileId,
+    mediaFilesQuickFingerprint,
+    mediaFilesContentHash,
+    artistsSortName,
+    artistsName,
+    albumsSortTitle,
+    albumsAlbumArtistId,
+    albumsArtworkId,
+    tracksAlbumId,
+    tracksSortTitle,
+    tracksTitle,
+    tracksArtworkId,
+    trackArtistsArtistRolePosition,
+    trackArtistsTrackPosition,
+    trackGenresGenreId,
+    trackGenresTrackPosition,
+    favoriteTracksCreatedAt,
+    userPlaylistsUpdatedAt,
+    userPlaylistItemsPlaylistPosition,
+    playbackHistoryEntriesStartedAt,
+    playbackHistoryEntriesTrackStartedAt,
+  ];
+  late final Shape0 trackSearchFts = Shape0(
+    source: i0.VersionedVirtualTable(
+      entityName: 'track_search_fts',
+      moduleAndArgs:
+          'fts5(track_public_id UNINDEXED, title, artist, album, file_name, tokenize = \'trigram\')',
+      columns: [_column_0, _column_1, _column_2, _column_3, _column_4],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape1 libraryRoots = Shape1(
+    source: i0.VersionedTable(
+      entityName: 'library_roots',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'UNIQUE(source_type, locator_key)',
+        'CHECK(source_type = \'windowsDirectory\')',
+        'CHECK(scan_generation >= 0)',
+      ],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_7,
+        _column_8,
+        _column_9,
+        _column_10,
+        _column_11,
+        _column_12,
+        _column_13,
+        _column_14,
+        _column_15,
+        _column_16,
+        _column_17,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape2 scanRuns = Shape2(
+    source: i0.VersionedTable(
+      entityName: 'scan_runs',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'UNIQUE(root_id, generation)',
+        'CHECK(generation >= 0)',
+        'CHECK(status IN (\'queued\', \'enumerating\', \'processing\', \'committing\', \'finalizing\', \'completed\', \'completedWithIssues\', \'cancelled\', \'failed\'))',
+        'CHECK(discovered_count >= 0)',
+        'CHECK(unchanged_count >= 0)',
+        'CHECK(parsed_count >= 0)',
+        'CHECK(inserted_count >= 0)',
+        'CHECK(updated_count >= 0)',
+        'CHECK(missing_count >= 0)',
+        'CHECK(failed_count >= 0)',
+      ],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_18,
+        _column_19,
+        _column_20,
+        _column_21,
+        _column_22,
+        _column_23,
+        _column_24,
+        _column_25,
+        _column_26,
+        _column_27,
+        _column_28,
+        _column_29,
+        _column_30,
+        _column_31,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape3 mediaFiles = Shape3(
+    source: i0.VersionedTable(
+      entityName: 'media_files',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'UNIQUE(root_id, locator_key)',
+        'CHECK(size_bytes >= 0)',
+        'CHECK(last_seen_generation >= 0)',
+        'CHECK(availability_state IN (\'available\', \'missing\', \'unreadable\'))',
+        'CHECK(metadata_state IN (\'pending\', \'ready\', \'failed\'))',
+      ],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_18,
+        _column_8,
+        _column_9,
+        _column_32,
+        _column_33,
+        _column_34,
+        _column_35,
+        _column_36,
+        _column_37,
+        _column_38,
+        _column_39,
+        _column_40,
+        _column_41,
+        _column_42,
+        _column_43,
+        _column_44,
+        _column_45,
+        _column_46,
+        _column_16,
+        _column_17,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape4 artworkAssets = Shape4(
+    source: i0.VersionedTable(
+      entityName: 'artwork_assets',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['CHECK(byte_length >= 0)'],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_47,
+        _column_48,
+        _column_49,
+        _column_50,
+        _column_16,
+        _column_51,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape5 artists = Shape5(
+    source: i0.VersionedTable(
+      entityName: 'artists',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_52,
+        _column_53,
+        _column_54,
+        _column_16,
+        _column_17,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape6 albums = Shape6(
+    source: i0.VersionedTable(
+      entityName: 'albums',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'CHECK(release_year IS NULL OR release_year BETWEEN 1 AND 9999)',
+      ],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_55,
+        _column_56,
+        _column_54,
+        _column_57,
+        _column_58,
+        _column_59,
+        _column_16,
+        _column_17,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape7 tracks = Shape7(
+    source: i0.VersionedTable(
+      entityName: 'tracks',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'CHECK(duration_ms IS NULL OR duration_ms >= 0)',
+        'CHECK(bitrate_bps IS NULL OR bitrate_bps >= 0)',
+        'CHECK(sample_rate_hz IS NULL OR sample_rate_hz > 0)',
+        'CHECK(track_number IS NULL OR track_number > 0)',
+        'CHECK(track_total IS NULL OR track_total > 0)',
+        'CHECK(disc_number IS NULL OR disc_number > 0)',
+        'CHECK(disc_total IS NULL OR disc_total > 0)',
+        'CHECK(release_year IS NULL OR release_year BETWEEN 1 AND 9999)',
+        'CHECK(metadata_revision >= 0)',
+      ],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_60,
+        _column_55,
+        _column_56,
+        _column_61,
+        _column_62,
+        _column_63,
+        _column_64,
+        _column_65,
+        _column_66,
+        _column_67,
+        _column_68,
+        _column_69,
+        _column_70,
+        _column_58,
+        _column_71,
+        _column_72,
+        _column_73,
+        _column_74,
+        _column_59,
+        _column_16,
+        _column_17,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape8 trackArtists = Shape8(
+    source: i0.VersionedTable(
+      entityName: 'track_artists',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(track_id, artist_id, role)',
+        'CHECK(position >= 0)',
+        'CHECK(role IN (\'primary\', \'performer\'))',
+      ],
+      columns: [_column_75, _column_76, _column_77, _column_78],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape9 genres = Shape9(
+    source: i0.VersionedTable(
+      entityName: 'genres',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_52,
+        _column_54,
+        _column_16,
+        _column_17,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape10 trackGenres = Shape10(
+    source: i0.VersionedTable(
+      entityName: 'track_genres',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(track_id, genre_id)',
+        'CHECK(position >= 0)',
+      ],
+      columns: [_column_75, _column_79, _column_78],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape11 favoriteTracks = Shape11(
+    source: i0.VersionedTable(
+      entityName: 'favorite_tracks',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(track_id)'],
+      columns: [_column_75, _column_16],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape12 userPlaylists = Shape12(
+    source: i0.VersionedTable(
+      entityName: 'user_playlists',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'CHECK(length(trim(name)) > 0)',
+        'CHECK(length(trim(normalized_name)) > 0)',
+      ],
+      columns: [
+        _column_5,
+        _column_6,
+        _column_52,
+        _column_80,
+        _column_81,
+        _column_16,
+        _column_17,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape13 userPlaylistItems = Shape13(
+    source: i0.VersionedTable(
+      entityName: 'user_playlist_items',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'UNIQUE(playlist_id, track_id)',
+        'UNIQUE(playlist_id, position)',
+        'CHECK(position >= 0)',
+      ],
+      columns: [_column_5, _column_82, _column_75, _column_78, _column_83],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape14 playbackHistoryEntries = Shape14(
+    source: i0.VersionedTable(
+      entityName: 'playback_history_entries',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [],
+      columns: [_column_5, _column_6, _column_84, _column_75, _column_21],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape15 trackPlaybackStats = Shape15(
+    source: i0.VersionedTable(
+      entityName: 'track_playback_stats',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: [
+        'PRIMARY KEY(track_id)',
+        'CHECK(play_count >= 0)',
+        'CHECK(last_played_at >= first_played_at)',
+      ],
+      columns: [_column_75, _column_85, _column_86, _column_87],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  final i1.Index mediaFilesRootAvailability = i1.Index(
+    'media_files_root_availability',
+    'CREATE INDEX media_files_root_availability ON media_files (root_id, availability_state)',
+  );
+  final i1.Index mediaFilesRootLastSeenGeneration = i1.Index(
+    'media_files_root_last_seen_generation',
+    'CREATE INDEX media_files_root_last_seen_generation ON media_files (root_id, last_seen_generation)',
+  );
+  final i1.Index mediaFilesPlatformFileId = i1.Index(
+    'media_files_platform_file_id',
+    'CREATE INDEX media_files_platform_file_id ON media_files (platform_file_id)',
+  );
+  final i1.Index mediaFilesQuickFingerprint = i1.Index(
+    'media_files_quick_fingerprint',
+    'CREATE INDEX media_files_quick_fingerprint ON media_files (quick_fingerprint)',
+  );
+  final i1.Index mediaFilesContentHash = i1.Index(
+    'media_files_content_hash',
+    'CREATE INDEX media_files_content_hash ON media_files (content_hash)',
+  );
+  final i1.Index artistsSortName = i1.Index(
+    'artists_sort_name',
+    'CREATE INDEX artists_sort_name ON artists (sort_name)',
+  );
+  final i1.Index artistsName = i1.Index(
+    'artists_name',
+    'CREATE INDEX artists_name ON artists (name)',
+  );
+  final i1.Index albumsSortTitle = i1.Index(
+    'albums_sort_title',
+    'CREATE INDEX albums_sort_title ON albums (sort_title)',
+  );
+  final i1.Index albumsAlbumArtistId = i1.Index(
+    'albums_album_artist_id',
+    'CREATE INDEX albums_album_artist_id ON albums (album_artist_id)',
+  );
+  final i1.Index albumsArtworkId = i1.Index(
+    'albums_artwork_id',
+    'CREATE INDEX albums_artwork_id ON albums (artwork_id)',
+  );
+  final i1.Index tracksAlbumId = i1.Index(
+    'tracks_album_id',
+    'CREATE INDEX tracks_album_id ON tracks (album_id)',
+  );
+  final i1.Index tracksSortTitle = i1.Index(
+    'tracks_sort_title',
+    'CREATE INDEX tracks_sort_title ON tracks (sort_title)',
+  );
+  final i1.Index tracksTitle = i1.Index(
+    'tracks_title',
+    'CREATE INDEX tracks_title ON tracks (title)',
+  );
+  final i1.Index tracksArtworkId = i1.Index(
+    'tracks_artwork_id',
+    'CREATE INDEX tracks_artwork_id ON tracks (artwork_id)',
+  );
+  final i1.Index trackArtistsArtistRolePosition = i1.Index(
+    'track_artists_artist_role_position',
+    'CREATE INDEX track_artists_artist_role_position ON track_artists (artist_id, role, position)',
+  );
+  final i1.Index trackArtistsTrackPosition = i1.Index(
+    'track_artists_track_position',
+    'CREATE INDEX track_artists_track_position ON track_artists (track_id, position)',
+  );
+  final i1.Index trackGenresGenreId = i1.Index(
+    'track_genres_genre_id',
+    'CREATE INDEX track_genres_genre_id ON track_genres (genre_id)',
+  );
+  final i1.Index trackGenresTrackPosition = i1.Index(
+    'track_genres_track_position',
+    'CREATE INDEX track_genres_track_position ON track_genres (track_id, position)',
+  );
+  final i1.Index favoriteTracksCreatedAt = i1.Index(
+    'favorite_tracks_created_at',
+    'CREATE INDEX favorite_tracks_created_at ON favorite_tracks (created_at, track_id)',
+  );
+  final i1.Index userPlaylistsUpdatedAt = i1.Index(
+    'user_playlists_updated_at',
+    'CREATE INDEX user_playlists_updated_at ON user_playlists (updated_at)',
+  );
+  final i1.Index userPlaylistItemsPlaylistPosition = i1.Index(
+    'user_playlist_items_playlist_position',
+    'CREATE INDEX user_playlist_items_playlist_position ON user_playlist_items (playlist_id, position)',
+  );
+  final i1.Index playbackHistoryEntriesStartedAt = i1.Index(
+    'playback_history_entries_started_at',
+    'CREATE INDEX playback_history_entries_started_at ON playback_history_entries (started_at)',
+  );
+  final i1.Index playbackHistoryEntriesTrackStartedAt = i1.Index(
+    'playback_history_entries_track_started_at',
+    'CREATE INDEX playback_history_entries_track_started_at ON playback_history_entries (track_id, started_at)',
+  );
+}
+
+class Shape14 extends i0.VersionedTable {
+  Shape14({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get rowId =>
+      columnsByName['row_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<String> get publicId =>
+      columnsByName['public_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get playbackSessionId =>
+      columnsByName['playback_session_id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<int> get trackId =>
+      columnsByName['track_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get startedAt =>
+      columnsByName['started_at']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<String> _column_84(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'playback_session_id',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NOT NULL UNIQUE',
+    );
+
+class Shape15 extends i0.VersionedTable {
+  Shape15({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<int> get trackId =>
+      columnsByName['track_id']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get playCount =>
+      columnsByName['play_count']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get firstPlayedAt =>
+      columnsByName['first_played_at']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<int> get lastPlayedAt =>
+      columnsByName['last_played_at']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<int> _column_85(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'play_count',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_86(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'first_played_at',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
+i1.GeneratedColumn<int> _column_87(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'last_played_at',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
+  required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
 }) {
   return (currentVersion, database) async {
     switch (currentVersion) {
@@ -1480,6 +2026,11 @@ i0.MigrationStepWithVersion migrationSteps({
         final migrator = i1.Migrator(database, schema);
         await from1To2(migrator, schema);
         return 2;
+      case 2:
+        final schema = Schema3(database: database);
+        final migrator = i1.Migrator(database, schema);
+        await from2To3(migrator, schema);
+        return 3;
       default:
         throw ArgumentError.value('Unknown migration from $currentVersion');
     }
@@ -1488,6 +2039,7 @@ i0.MigrationStepWithVersion migrationSteps({
 
 i1.OnUpgrade stepByStep({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
+  required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
 }) => i0.VersionedSchema.stepByStepHelper(
-  step: migrationSteps(from1To2: from1To2),
+  step: migrationSteps(from1To2: from1To2, from2To3: from2To3),
 );

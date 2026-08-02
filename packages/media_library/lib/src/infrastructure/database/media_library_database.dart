@@ -7,9 +7,11 @@ import 'tables/favorite_tracks.dart';
 import 'tables/genres.dart';
 import 'tables/library_roots.dart';
 import 'tables/media_files.dart';
+import 'tables/playback_history_entries.dart';
 import 'tables/scan_runs.dart';
 import 'tables/track_artists.dart';
 import 'tables/track_genres.dart';
+import 'tables/track_playback_stats.dart';
 import 'tables/tracks.dart';
 import 'tables/user_playlist_items.dart';
 import 'tables/user_playlists.dart';
@@ -32,6 +34,8 @@ part 'media_library_database.g.dart';
     FavoriteTracks,
     UserPlaylists,
     UserPlaylistItems,
+    PlaybackHistoryEntries,
+    TrackPlaybackStats,
   ],
   include: {'library_search.drift'},
 )
@@ -39,7 +43,7 @@ final class MediaLibraryDatabase extends _$MediaLibraryDatabase {
   MediaLibraryDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -51,6 +55,12 @@ final class MediaLibraryDatabase extends _$MediaLibraryDatabase {
         await m.createIndex(schema.favoriteTracksCreatedAt);
         await m.createIndex(schema.userPlaylistsUpdatedAt);
         await m.createIndex(schema.userPlaylistItemsPlaylistPosition);
+      },
+      from2To3: (m, schema) async {
+        await m.createTable(schema.playbackHistoryEntries);
+        await m.createTable(schema.trackPlaybackStats);
+        await m.createIndex(schema.playbackHistoryEntriesStartedAt);
+        await m.createIndex(schema.playbackHistoryEntriesTrackStartedAt);
       },
     ),
     beforeOpen: (details) async {

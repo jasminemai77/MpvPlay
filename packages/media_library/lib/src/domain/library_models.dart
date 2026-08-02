@@ -107,6 +107,32 @@ final class UserPlaylistDetail {
   final List<LibraryTrack> tracks;
 }
 
+final class PlaybackHistoryEntry {
+  const PlaybackHistoryEntry({
+    required this.id,
+    required this.track,
+    required this.startedAt,
+    required this.playCount,
+  });
+  final String id;
+  final LibraryTrack track;
+  final DateTime startedAt;
+  final int playCount;
+}
+
+final class TrackPlaybackStats {
+  const TrackPlaybackStats({
+    required this.trackId,
+    required this.playCount,
+    required this.firstPlayedAt,
+    required this.lastPlayedAt,
+  });
+  final String trackId;
+  final int playCount;
+  final DateTime firstPlayedAt;
+  final DateTime lastPlayedAt;
+}
+
 enum CollectionFailureCode {
   playlistNotFound,
   trackNotFound,
@@ -123,6 +149,21 @@ final class CollectionFailure implements Exception {
 
   @override
   String toString() => 'CollectionFailure(${code.name}): ${message ?? ''}';
+}
+
+enum PlaybackHistoryFailureCode {
+  trackNotFound,
+  invalidPlaybackSessionId,
+  databaseFailure,
+}
+
+final class PlaybackHistoryFailure implements Exception {
+  const PlaybackHistoryFailure(this.code, {this.message});
+  final PlaybackHistoryFailureCode code;
+  final String? message;
+
+  @override
+  String toString() => 'PlaybackHistoryFailure(${code.name}): ${message ?? ''}';
 }
 
 final class LibrarySearchResult {
