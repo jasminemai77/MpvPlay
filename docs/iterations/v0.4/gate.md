@@ -1,6 +1,6 @@
 # v0.4 Version Gate
 
-Result: **ACCEPTED**.
+Result: **ACCEPTED_WITH_RISK**.
 
 Evidence: local formatting and zero-error analysis; 14 runtime, 1 platform,
 43 media-library, 8 real-libmpv, and 7 Flutter tests; local Windows Release
