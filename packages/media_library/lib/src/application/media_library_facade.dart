@@ -83,6 +83,15 @@ final class MediaLibraryFacade {
       _roots.setEnabled(publicId, false);
   Future<void> setRootEnabled(String publicId, bool enabled) =>
       _roots.setEnabled(publicId, enabled);
+  Future<List<ManagedLibraryRoot>> listManagedLibraryRoots() async {
+    final roots = await _roots.list();
+    return Future.wait(roots.map((root) async {
+      final reachable = root.enabled && await Directory(root.locator).exists();
+      final state = !root.enabled ? LibraryRootScanState.disabled : !reachable ? LibraryRootScanState.unavailable : root.scanGeneration == 0 ? LibraryRootScanState.neverScanned : LibraryRootScanState.completed;
+      return ManagedLibraryRoot(id: root.id, displayPath: root.locator, enabled: root.enabled, currentlyReachable: reachable, scanState: state);
+    }));
+  }
+  Stream<List<ManagedLibraryRoot>> watchManagedLibraryRoots() async* { await for (final _ in query.watchRoots()) { yield await listManagedLibraryRoots(); } }
   Stream<List<LibraryTrack>> watchFavoriteTracks() =>
       query.watchFavoriteTracks();
   Stream<bool> watchIsFavorite(String trackId) =>

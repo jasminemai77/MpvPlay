@@ -13,6 +13,13 @@ enum ScanStatus {
   failed,
 }
 
+enum LibraryRootScanState { disabled, unavailable, neverScanned, scanning, cancelling, completed, failed, cancelled }
+
+final class ManagedLibraryRoot {
+  const ManagedLibraryRoot({required this.id, required this.displayPath, required this.enabled, required this.currentlyReachable, required this.scanState});
+  final String id; final String displayPath; final bool enabled; final bool currentlyReachable; final LibraryRootScanState scanState;
+}
+
 enum LibraryFailureCode {
   rootUnavailable,
   rootPermissionDenied,
