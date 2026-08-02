@@ -85,6 +85,25 @@ void main() {
   );
 
   test(
+    'scan all uses enabled roots only and returns per-root results',
+    () async {
+      final second = await Directory.systemTemp.createTemp(
+        'mpvplay-second-root-',
+      );
+      addTearDown(() => second.delete(recursive: true));
+      final first = (await facade.query.listRoots()).single;
+      final secondRoot = await facade.addDirectoryRoot(
+        locator: second.path,
+        displayName: 'Second',
+      );
+      await facade.removeRoot(first.id);
+      final result = await coordinator.scanAllEnabledRoots();
+      expect(result.cancelled, isFalse);
+      expect(result.results.map((entry) => entry.rootId), [secondRoot.id]);
+    },
+  );
+
+  test(
     'a later scan cannot overtake an active generation for the same root',
     () async {
       final paused = _PausedEnumerator();
