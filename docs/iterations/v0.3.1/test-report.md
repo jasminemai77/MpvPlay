@@ -5,3 +5,11 @@ cumulative counts, duplicate session idempotency, Missing-track retention and
 recovery, 10,000-event retention, atomic clear, cascades, and foreign-key
 checks. Observer tests cover first playing, duplicate snapshots, pause/resume,
 track changes, terminal cycles, failed writes, retries, and disposal waiting.
+
+Local regression passed: 43 media-library tests, 11 PlaybackRuntime tests, 1
+platform bridge test, 8 real libmpv tests, and 7 Flutter tests. A Windows
+Release executable was also built locally.
+
+Local regression passed: 43 media-library tests, 11 PlaybackRuntime tests, 1
+platform bridge test, 8 real libmpv tests, and 7 Flutter tests. A Windows
+Release executable was also built locally.
