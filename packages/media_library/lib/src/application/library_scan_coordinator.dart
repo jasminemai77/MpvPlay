@@ -41,6 +41,23 @@ final class ScanCancellationToken {
   void cancel() => _cancelled = true;
 }
 
+final class LibraryRootScanResult {
+  const LibraryRootScanResult({
+    required this.rootId,
+    required this.status,
+    this.message,
+  });
+  final String rootId;
+  final domain.ScanStatus status;
+  final String? message;
+}
+
+final class ScanAllResult {
+  const ScanAllResult({required this.results, required this.cancelled});
+  final List<LibraryRootScanResult> results;
+  final bool cancelled;
+}
+
 /// Owns only transient scan state. Persistent library rows remain Drift-owned.
 final class LibraryScanCoordinator {
   LibraryScanCoordinator(
@@ -305,6 +322,45 @@ final class LibraryScanCoordinator {
     if (rootId == null) return;
     _active[rootId]?.cancel();
     await _runs[rootId];
+  }
+
+  /// Stable, serial scan-all policy. A failed root never prevents later roots.
+  Future<ScanAllResult> scanAllEnabledRoots() async {
+    if (_activeRootId != null) {
+      throw StateError('A scan is already active for root $_activeRootId');
+    }
+    final roots =
+        await (_database.select(_database.libraryRoots)
+              ..where((root) => root.enabled.equals(true))
+              ..orderBy([(root) => OrderingTerm.asc(root.locatorKey)]))
+            .get();
+    final results = <LibraryRootScanResult>[];
+    for (final root in roots) {
+      var finalStatus = domain.ScanStatus.completed;
+      String? message;
+      final subscription = progress
+          .where((event) => event.rootId == root.publicId)
+          .listen((event) {
+            finalStatus = event.status;
+            message = event.message;
+          });
+      try {
+        await scanAndWait(root.publicId);
+      } finally {
+        await subscription.cancel();
+      }
+      results.add(
+        LibraryRootScanResult(
+          rootId: root.publicId,
+          status: finalStatus,
+          message: message,
+        ),
+      );
+      if (finalStatus == domain.ScanStatus.cancelled) {
+        return ScanAllResult(results: results, cancelled: true);
+      }
+    }
+    return ScanAllResult(results: results, cancelled: false);
   }
 
   Future<_UpsertResult> _upsertFile(
