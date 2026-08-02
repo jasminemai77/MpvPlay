@@ -84,25 +84,27 @@ void main() {
     },
   );
 
-  test('disable and recovery preserve the concrete track public identity',
-      () async {
-    final audio = File('${directory.path}${Platform.pathSeparator}song.mp3');
-    await audio.writeAsBytes([1]);
-    final root = (await facade.query.listRoots()).single;
-    await coordinator.scanAndWait(root.id);
-    final original = (await facade.query.listTracks()).single;
+  test(
+    'disable and recovery preserve the concrete track public identity',
+    () async {
+      final audio = File('${directory.path}${Platform.pathSeparator}song.mp3');
+      await audio.writeAsBytes([1]);
+      final root = (await facade.query.listRoots()).single;
+      await coordinator.scanAndWait(root.id);
+      final original = (await facade.query.listTracks()).single;
 
-    await facade.removeRoot(root.id);
-    final disabled = (await facade.query.listTracks()).single;
-    expect(disabled.id, original.id);
-    expect(disabled.available, isFalse);
+      await facade.removeRoot(root.id);
+      final disabled = (await facade.query.listTracks()).single;
+      expect(disabled.id, original.id);
+      expect(disabled.available, isFalse);
 
-    await facade.setRootEnabled(root.id, true);
-    await coordinator.scanAndWait(root.id);
-    final restored = (await facade.query.listTracks()).single;
-    expect(restored.id, original.id);
-    expect(restored.available, isTrue);
-  });
+      await facade.setRootEnabled(root.id, true);
+      await coordinator.scanAndWait(root.id);
+      final restored = (await facade.query.listTracks()).single;
+      expect(restored.id, original.id);
+      expect(restored.available, isTrue);
+    },
+  );
 
   test(
     'scan all uses enabled roots only and returns per-root results',
