@@ -13,11 +13,49 @@ enum ScanStatus {
   failed,
 }
 
-enum LibraryRootScanState { disabled, unavailable, neverScanned, scanning, cancelling, completed, failed, cancelled }
+enum LibraryRootScanState {
+  disabled,
+  unavailable,
+  neverScanned,
+  scanning,
+  cancelling,
+  completed,
+  failed,
+  cancelled,
+}
+
+final class LibraryRootScanSummary {
+  const LibraryRootScanSummary({
+    required this.status,
+    this.completedAt,
+    this.message,
+    this.discoveredCount = 0,
+    this.missingCount = 0,
+  });
+  final String status;
+  final DateTime? completedAt;
+  final String? message;
+  final int discoveredCount;
+  final int missingCount;
+}
 
 final class ManagedLibraryRoot {
-  const ManagedLibraryRoot({required this.id, required this.displayPath, required this.enabled, required this.currentlyReachable, required this.scanState});
-  final String id; final String displayPath; final bool enabled; final bool currentlyReachable; final LibraryRootScanState scanState;
+  const ManagedLibraryRoot({
+    required this.id,
+    required this.displayPath,
+    required this.enabled,
+    required this.currentlyReachable,
+    required this.scanState,
+    this.lastScannedAt,
+    this.summary,
+  });
+  final String id;
+  final String displayPath;
+  final bool enabled;
+  final bool currentlyReachable;
+  final LibraryRootScanState scanState;
+  final DateTime? lastScannedAt;
+  final LibraryRootScanSummary? summary;
 }
 
 enum LibraryFailureCode {

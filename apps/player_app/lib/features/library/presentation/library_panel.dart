@@ -71,6 +71,9 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
   Widget build(BuildContext context) {
     final roots =
         ref.watch(libraryRootsProvider).value ?? const <LibraryRoot>[];
+    final managedRoots =
+        ref.watch(managedLibraryRootsProvider).value ??
+        const <ManagedLibraryRoot>[];
     final allTracks =
         ref.watch(libraryTracksProvider).value ?? const <LibraryTrack>[];
     final tracks = _results ?? allTracks;
@@ -197,9 +200,7 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
           const Divider(height: 1),
           Expanded(
             child: tracks.isEmpty
-                ? const Center(
-                    child: Text('Add a music folder to build your library'),
-                  )
+                ? _LibraryEmptyState(roots: managedRoots, onAddFolder: _addRoot)
                 : ListView.builder(
                     itemCount: tracks.length,
                     itemBuilder: (context, index) {
@@ -280,6 +281,45 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
   Future<void> _playAll(List<LibraryTrack> tracks) {
     if (tracks.isEmpty) return Future.value();
     return widget.onPlay(tracks, tracks.first);
+  }
+}
+
+class _LibraryEmptyState extends StatelessWidget {
+  const _LibraryEmptyState({required this.roots, required this.onAddFolder});
+  final List<ManagedLibraryRoot> roots;
+  final VoidCallback onAddFolder;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = roots.isEmpty
+        ? 'No music folders added'
+        : roots.any(
+            (root) =>
+                root.scanState == LibraryRootScanState.scanning ||
+                root.scanState == LibraryRootScanState.cancelling,
+          )
+        ? 'Scanning music folders'
+        : roots.every((root) => !root.currentlyReachable)
+        ? 'Music folders are unavailable'
+        : roots.any(
+            (root) => root.scanState == LibraryRootScanState.neverScanned,
+          )
+        ? 'Music folders have not been scanned yet'
+        : 'No supported audio files found, or all songs are missing';
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(text, textAlign: TextAlign.center),
+          if (roots.isEmpty)
+            TextButton.icon(
+              onPressed: onAddFolder,
+              icon: const Icon(Icons.create_new_folder_outlined),
+              label: const Text('Add music folder'),
+            ),
+        ],
+      ),
+    );
   }
 }
 

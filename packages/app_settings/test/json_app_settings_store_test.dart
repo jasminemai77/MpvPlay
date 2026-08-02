@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:app_settings/app_settings.dart';
 import 'package:test/test.dart';
@@ -73,4 +74,61 @@ void main() {
     expect(restored.current.theme, AppThemePreference.system);
     expect(restored.current.scanNewRootsImmediately, isTrue);
   });
+
+  test('failed replacement keeps current and watch silent', () async {
+    await file.writeAsString(AppPreferences.defaults.toJson().toString());
+    // Start with valid JSON so the previous durable value is observable.
+    await file.writeAsString('{"version":1,"theme":"light"}');
+    final operations = _FailingReplaceOperations();
+    final store = JsonAppSettingsStore(file, fileOperations: operations);
+    await store.load();
+    final changes = <AppPreferences>[];
+    final subscription = store.watch().listen(changes.add);
+
+    await expectLater(
+      store.setTheme(AppThemePreference.dark),
+      throwsA(isA<AppSettingsFailure>()),
+    );
+
+    expect(store.current.theme, AppThemePreference.light);
+    expect(changes, [isA<AppPreferences>()]);
+    expect(await file.readAsString(), '{"version":1,"theme":"light"}');
+    await subscription.cancel();
+  });
+
+  test('close waits for an in-flight write and then rejects writes', () async {
+    final operations = _BlockingOperations();
+    final store = JsonAppSettingsStore(file, fileOperations: operations);
+    final writing = store.setTheme(AppThemePreference.dark);
+    await operations.writeStarted.future;
+    var closed = false;
+    final closing = store.close().then((_) => closed = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(closed, isFalse);
+    operations.allowWrite.complete();
+    await writing;
+    await closing;
+    await expectLater(
+      store.setTheme(AppThemePreference.light),
+      throwsA(isA<StateError>()),
+    );
+  });
+}
+
+class _FailingReplaceOperations extends IoAppSettingsFileOperations {
+  @override
+  Future<void> replace(File temporary, File destination) =>
+      Future.error(const FileSystemException('injected replace failure'));
+}
+
+class _BlockingOperations extends IoAppSettingsFileOperations {
+  final writeStarted = Completer<void>();
+  final allowWrite = Completer<void>();
+
+  @override
+  Future<void> write(File file, String contents) async {
+    writeStarted.complete();
+    await allowWrite.future;
+    await super.write(file, contents);
+  }
 }

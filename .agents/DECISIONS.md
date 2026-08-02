@@ -1,5 +1,14 @@
 # Decisions
 
+## D-012: v0.5 keeps one physical location per Track
+
+Media Library Schema v3 models `tracks.media_file_id` as one concrete
+media-file identity. v0.5 deliberately does not add a Track–MediaFile relation
+table, does not create Schema v4, and does not rebuild existing databases.
+Duplicate audio files under separate roots remain independent Tracks. A future
+identity-model migration is required before a logical Track can own multiple
+physical locations and share user relationships between them.
+
 ## D-011: v0.5 root lifecycle reuses enabled
 
 `library_roots.enabled` already independently represents user-controlled

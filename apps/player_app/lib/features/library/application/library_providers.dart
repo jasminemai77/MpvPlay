@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:media_library/media_library.dart';
@@ -12,6 +14,35 @@ final libraryScanCoordinatorProvider = Provider<LibraryScanCoordinator>(
 final libraryRootsProvider = StreamProvider<List<LibraryRoot>>(
   (ref) => ref.watch(libraryFacadeProvider).query.watchRoots(),
 );
+final managedLibraryRootsProvider = StreamProvider<List<ManagedLibraryRoot>>((
+  ref,
+) {
+  final library = ref.watch(libraryFacadeProvider);
+  final scanner = ref.watch(libraryScanCoordinatorProvider);
+  late final StreamController<void> changes;
+  late final StreamSubscription<Object?> roots;
+  late final StreamSubscription<LibraryScanProgress> progress;
+  changes = StreamController<void>(
+    onListen: () {
+      roots = library.query.watchRoots().listen((_) => changes.add(null));
+      progress = scanner.progress.listen((_) => changes.add(null));
+      changes.add(null);
+    },
+    onCancel: () async {
+      await roots.cancel();
+      await progress.cancel();
+    },
+  );
+  return changes.stream.asyncMap((_) async {
+    final transient = <String, LibraryRootScanState>{};
+    for (final root in await library.query.listRoots()) {
+      if (scanner.rootState(root.id) case final state?) {
+        transient[root.id] = state;
+      }
+    }
+    return library.listManagedLibraryRoots(transientStates: transient);
+  });
+});
 final libraryTracksProvider = StreamProvider<List<LibraryTrack>>(
   (ref) => ref.watch(libraryFacadeProvider).query.watchTracks(),
 );
@@ -48,6 +79,15 @@ final class LibraryController {
   }
 
   ScanCancellationToken rescan(String rootId) => _scanner.scan(rootId);
+
+  Future<ScanAllResult> scanAll() => _scanner.scanAllEnabledRoots();
+
+  Future<void> cancelScan() => _scanner.cancelActiveScan();
+
+  Future<void> setRootEnabled(String rootId, bool enabled) async {
+    if (!enabled) await _scanner.cancelActiveScan();
+    await _library.setRootEnabled(rootId, enabled);
+  }
 
   /// Root disablement is serialized with the single scan coordinator.
   Future<void> removeRoot(String rootId) async {

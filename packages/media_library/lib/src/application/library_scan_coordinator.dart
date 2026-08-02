@@ -74,10 +74,28 @@ final class LibraryScanCoordinator {
   final _active = <String, ScanCancellationToken>{};
   final _runs = <String, Future<void>>{};
   String? _activeRootId;
+  String? _cancellingRootId;
+  final _latestProgress = <String, LibraryScanProgress>{};
   bool _closed = false;
   static const _uuid = Uuid();
 
   Stream<LibraryScanProgress> get progress => _progress.stream;
+
+  /// Process-local state. Final results remain persisted in the scan-runs table.
+  domain.LibraryRootScanState? rootState(String rootId) {
+    if (_activeRootId == rootId) {
+      return _cancellingRootId == rootId
+          ? domain.LibraryRootScanState.cancelling
+          : domain.LibraryRootScanState.scanning;
+    }
+    return switch (_latestProgress[rootId]?.status) {
+      domain.ScanStatus.failed => domain.LibraryRootScanState.failed,
+      domain.ScanStatus.cancelled => domain.LibraryRootScanState.cancelled,
+      domain.ScanStatus.completed || domain.ScanStatus.completedWithIssues =>
+        domain.LibraryRootScanState.completed,
+      _ => null,
+    };
+  }
 
   ScanCancellationToken scan(String rootPublicId) {
     if (_closed) throw StateError('LibraryScanCoordinator is closed');
@@ -314,12 +332,18 @@ final class LibraryScanCoordinator {
     } finally {
       _active.remove(rootPublicId);
       _activeRootId = null;
+      _cancellingRootId = null;
     }
   }
 
   Future<void> cancelActiveScan() async {
     final rootId = _activeRootId;
     if (rootId == null) return;
+    _cancellingRootId = rootId;
+    final previous = _latestProgress[rootId];
+    if (previous != null) {
+      _emit(rootId, previous.status, previous.generation);
+    }
     _active[rootId]?.cancel();
     await _runs[rootId];
   }
@@ -697,8 +721,8 @@ final class LibraryScanCoordinator {
     int missing = 0,
     int failed = 0,
     String? message,
-  }) => _progress.add(
-    LibraryScanProgress(
+  }) {
+    final progress = LibraryScanProgress(
       rootId: rootId,
       status: status,
       generation: generation,
@@ -709,8 +733,10 @@ final class LibraryScanCoordinator {
       missingCount: missing,
       failedCount: failed,
       message: message,
-    ),
-  );
+    );
+    _latestProgress[rootId] = progress;
+    _progress.add(progress);
+  }
 
   Future<void> close() async {
     if (_closed) return;

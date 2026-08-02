@@ -49,8 +49,10 @@ final class AppBootstrap {
     if (settings.current.scanOnStartup) {
       unawaited(
         Future<void>(() async {
-          for (final root in await library.query.listRoots()) {
-            if (root.enabled) await scanner.scanAndWait(root.id);
+          try {
+            await scanner.scanAllEnabledRoots();
+          } catch (_) {
+            // The scan run persists its own root-specific failure summary.
           }
         }),
       );
@@ -147,10 +149,12 @@ final class AppBootstrap {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    // Stop accepting scan work, wait for cancellation, then drain all durable
+    // writers before closing the library database or PlaybackRuntime.
+    await _scanner.close();
+    await _settings.close();
     await _historyObserver.close();
     await _snapshotSubscription.cancel();
-    await _settings.close();
-    await _scanner.close();
     await _library.close();
     await _client.dispose();
   }

@@ -115,7 +115,10 @@ final class LibraryTrackDao {
   domain.LibraryTrack mapJoinedRow(TypedResult row) {
     final track = row.readTable(_database.tracks);
     final mediaFile = row.readTable(_database.mediaFiles);
-    final root = row.readTable(_database.libraryRoots);
+    // Collection/history joins predate root management. They remain valid
+    // because disabling a root atomically marks its media files missing; when
+    // a root is present, its enabled flag is the additional availability rule.
+    final root = row.readTableOrNull(_database.libraryRoots);
     return domain.LibraryTrack(
       id: track.publicId,
       mediaFileId: mediaFile.publicId,
@@ -126,7 +129,8 @@ final class LibraryTrackDao {
           ? null
           : Duration(milliseconds: track.durationMs!),
       locator: Uri.file(mediaFile.locator, windows: true),
-      available: root.enabled && mediaFile.availabilityState == 'available',
+      available:
+          (root?.enabled ?? true) && mediaFile.availabilityState == 'available',
     );
   }
 }

@@ -83,15 +83,47 @@ final class MediaLibraryFacade {
       _roots.setEnabled(publicId, false);
   Future<void> setRootEnabled(String publicId, bool enabled) =>
       _roots.setEnabled(publicId, enabled);
-  Future<List<ManagedLibraryRoot>> listManagedLibraryRoots() async {
+  Future<List<ManagedLibraryRoot>> listManagedLibraryRoots({
+    Map<String, LibraryRootScanState> transientStates = const {},
+  }) async {
     final roots = await _roots.list();
-    return Future.wait(roots.map((root) async {
-      final reachable = root.enabled && await Directory(root.locator).exists();
-      final state = !root.enabled ? LibraryRootScanState.disabled : !reachable ? LibraryRootScanState.unavailable : root.scanGeneration == 0 ? LibraryRootScanState.neverScanned : LibraryRootScanState.completed;
-      return ManagedLibraryRoot(id: root.id, displayPath: root.locator, enabled: root.enabled, currentlyReachable: reachable, scanState: state);
-    }));
+    final summaries = await _roots.latestScanSummaries();
+    return Future.wait(
+      roots.map((root) async {
+        final reachable =
+            root.enabled && await Directory(root.locator).exists();
+        final summary = summaries[root.id];
+        final state = !root.enabled
+            ? LibraryRootScanState.disabled
+            : !reachable
+            ? LibraryRootScanState.unavailable
+            : transientStates[root.id] ??
+                  switch (summary?.status) {
+                    'failed' => LibraryRootScanState.failed,
+                    'cancelled' => LibraryRootScanState.cancelled,
+                    _ when root.scanGeneration == 0 =>
+                      LibraryRootScanState.neverScanned,
+                    _ => LibraryRootScanState.completed,
+                  };
+        return ManagedLibraryRoot(
+          id: root.id,
+          displayPath: root.locator,
+          enabled: root.enabled,
+          currentlyReachable: reachable,
+          scanState: state,
+          lastScannedAt: summary?.completedAt,
+          summary: summary,
+        );
+      }),
+    );
   }
-  Stream<List<ManagedLibraryRoot>> watchManagedLibraryRoots() async* { await for (final _ in query.watchRoots()) { yield await listManagedLibraryRoots(); } }
+
+  Stream<List<ManagedLibraryRoot>> watchManagedLibraryRoots() async* {
+    await for (final _ in query.watchRoots()) {
+      yield await listManagedLibraryRoots();
+    }
+  }
+
   Stream<List<LibraryTrack>> watchFavoriteTracks() =>
       query.watchFavoriteTracks();
   Stream<bool> watchIsFavorite(String trackId) =>
