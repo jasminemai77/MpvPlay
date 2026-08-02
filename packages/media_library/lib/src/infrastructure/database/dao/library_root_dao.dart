@@ -60,6 +60,16 @@ final class LibraryRootDao {
     )..where((root) => root.publicId.equals(publicId))).go();
   }
 
+  Future<void> setEnabled(String publicId, bool enabled) =>
+      (_database.update(
+        _database.libraryRoots,
+      )..where((root) => root.publicId.equals(publicId))).write(
+        LibraryRootsCompanion(
+          enabled: Value(enabled),
+          updatedAt: Value(DateTime.now().toUtc()),
+        ),
+      );
+
   domain.LibraryRoot _toDomain(LibraryRoot row) => domain.LibraryRoot(
     id: row.publicId,
     sourceType: domain.LibrarySourceType.windowsDirectory,

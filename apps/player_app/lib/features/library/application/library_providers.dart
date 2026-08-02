@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_settings/app_settings.dart';
 import 'package:media_library/media_library.dart';
+import '../../settings/application/settings_providers.dart';
 
 final libraryFacadeProvider = Provider<MediaLibraryFacade>(
   (_) => throw UnimplementedError(),
@@ -26,20 +28,22 @@ final libraryControllerProvider = Provider<LibraryController>(
   (ref) => LibraryController(
     ref.watch(libraryFacadeProvider),
     ref.watch(libraryScanCoordinatorProvider),
+    ref.watch(appSettingsRepositoryProvider),
   ),
 );
 
 final class LibraryController {
-  LibraryController(this._library, this._scanner);
+  LibraryController(this._library, this._scanner, this._settings);
   final MediaLibraryFacade _library;
   final LibraryScanCoordinator _scanner;
+  final AppSettingsRepository _settings;
 
   Future<LibraryRoot> addDirectory(String path) async {
     final root = await _library.addDirectoryRoot(
       locator: path,
       displayName: path.split(RegExp(r'[\\/]')).last,
     );
-    _scanner.scan(root.id);
+    if (_settings.current.scanNewRootsImmediately) _scanner.scan(root.id);
     return root;
   }
 

@@ -106,6 +106,7 @@ final class LibraryScanCoordinator {
       root = await (_database.select(
         _database.libraryRoots,
       )..where((r) => r.publicId.equals(rootPublicId))).getSingle();
+      if (!root.enabled) throw StateError('Library root is disabled');
       generation = root.scanGeneration + 1;
       final now = DateTime.now().toUtc();
       scanRunId = await _database

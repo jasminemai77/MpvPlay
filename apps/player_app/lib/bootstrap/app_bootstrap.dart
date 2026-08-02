@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:app_settings/app_settings.dart';
 import 'package:media_library/media_library.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:playback_engine_mpv/playback_engine_mpv.dart';
@@ -14,6 +15,7 @@ import '../app/mpv_play_app.dart';
 import '../features/now_playing/application/playback_providers.dart';
 import '../features/library/application/library_providers.dart';
 import '../features/history/application/playback_history_observer.dart';
+import '../features/settings/application/settings_providers.dart';
 
 final class AppBootstrap {
   AppBootstrap._(
@@ -23,6 +25,7 @@ final class AppBootstrap {
     this._scanner,
     this._historyObserver,
     this._snapshotSubscription,
+    this._settings,
   );
   final PlaybackClient _client;
   final PlaybackSnapshot _initialSnapshot;
@@ -30,14 +33,28 @@ final class AppBootstrap {
   final LibraryScanCoordinator _scanner;
   final AppPlaybackHistoryObserver _historyObserver;
   final StreamSubscription<PlaybackSnapshot> _snapshotSubscription;
+  final AppSettingsRepository _settings;
 
   static Future<AppBootstrap> create() async {
     WidgetsFlutterBinding.ensureInitialized();
     final directory = await getApplicationSupportDirectory();
+    final settings = JsonAppSettingsStore(
+      File('${directory.path}${Platform.pathSeparator}settings.json'),
+    );
+    await settings.load();
     final library = MediaLibraryFacade.open(
       File('${directory.path}${Platform.pathSeparator}media_library.sqlite'),
     );
     final scanner = library.createScanCoordinator();
+    if (settings.current.scanOnStartup) {
+      unawaited(
+        Future<void>(() async {
+          for (final root in await library.query.listRoots()) {
+            if (root.enabled) await scanner.scanAndWait(root.id);
+          }
+        }),
+      );
+    }
     final runtime = PlaybackRuntime(
       engine: MpvPlaybackEngine(),
       logSink: JsonLinePlaybackLogger(
@@ -107,6 +124,7 @@ final class AppBootstrap {
       scanner,
       historyObserver,
       snapshotSubscription,
+      settings,
     );
   }
 
@@ -120,6 +138,7 @@ final class AppBootstrap {
         initialSnapshotProvider.overrideWithValue(_initialSnapshot),
         libraryFacadeProvider.overrideWithValue(_library),
         libraryScanCoordinatorProvider.overrideWithValue(_scanner),
+        appSettingsRepositoryProvider.overrideWithValue(_settings),
       ],
       child: const MpvPlayApp(),
     ),
@@ -130,6 +149,7 @@ final class AppBootstrap {
     _disposed = true;
     await _historyObserver.close();
     await _snapshotSubscription.cancel();
+    await _settings.close();
     await _scanner.close();
     await _library.close();
     await _client.dispose();
