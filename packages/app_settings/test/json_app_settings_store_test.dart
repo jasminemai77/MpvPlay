@@ -54,4 +54,23 @@ void main() {
       expect(restored.current.theme, AppThemePreference.dark);
     },
   );
+
+  test('future versions are backed up and reset persists defaults', () async {
+    await file.writeAsString('{"version":99,"theme":"dark"}');
+    final store = JsonAppSettingsStore(file);
+    await store.load();
+    expect(store.current.theme, AppThemePreference.system);
+    expect(
+      (await directory.list().toList()).any(
+        (e) => e.path.contains('.corrupt-'),
+      ),
+      isTrue,
+    );
+    await store.setTheme(AppThemePreference.dark);
+    await store.resetToDefaults();
+    final restored = JsonAppSettingsStore(file);
+    await restored.load();
+    expect(restored.current.theme, AppThemePreference.system);
+    expect(restored.current.scanNewRootsImmediately, isTrue);
+  });
 }
