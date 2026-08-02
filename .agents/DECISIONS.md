@@ -1,5 +1,13 @@
 # Decisions
 
+## D-010: v0.4 queue authority
+
+PlaybackRuntime owns base queue, actual play order, current entry and traversal
+history. Each enqueue occurrence receives a UUIDv7 entry id, allowing duplicate
+tracks. Shuffle is a generated non-repeating cycle; Repeat One applies only to
+natural completion. Queue state is persisted in JSON session storage and never
+in the media-library database.
+
 ## D-001: Deterministic generated media is committed
 
 The small PCM WAV fixtures and manifest are generated from project code and

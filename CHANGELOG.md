@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0 (unreleased)
+
+- Added runtime-owned queue entries with UUIDv7 occurrence identities.
+- Added repeat off/all/one, cycle shuffle, queue editing, and queue session persistence.
+
 ## 0.3.1 (unreleased)
 
 - Added durable recent playback history and cumulative per-track play counts.

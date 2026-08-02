@@ -8,6 +8,11 @@ import 'package:player_core/player_core.dart';
 final class PersistedSession {
   const PersistedSession({
     required this.items,
+    this.entries = const [],
+    this.currentEntryId,
+    this.playOrderEntryIds = const [],
+    this.repeatMode = RepeatMode.off,
+    this.shuffleEnabled = false,
     required this.currentIndex,
     required this.position,
     required this.volume,
@@ -15,6 +20,11 @@ final class PersistedSession {
     this.skippedItems = 0,
   });
   final List<PlayableItem> items;
+  final List<PlaybackQueueEntry> entries;
+  final String? currentEntryId;
+  final List<String> playOrderEntryIds;
+  final RepeatMode repeatMode;
+  final bool shuffleEnabled;
   final int currentIndex;
   final Duration position;
   final double volume;
@@ -37,7 +47,22 @@ final class JsonSessionStore {
   Future<void> _save(PlaybackSnapshot snapshot) async {
     await file.parent.create(recursive: true);
     final json = <String, Object?>{
+      'version': 2,
       'uris': snapshot.queueItems.map((e) => e.source.uri.toString()).toList(),
+      'entries': snapshot.queueEntries
+          .map(
+            (e) => {
+              'entryId': e.entryId,
+              'uri': e.item.source.uri.toString(),
+              'title': e.item.title,
+              'artist': e.item.artist,
+            },
+          )
+          .toList(),
+      'currentEntryId': snapshot.currentEntryId,
+      'playOrderEntryIds': snapshot.playOrderEntryIds,
+      'repeatMode': snapshot.repeatMode.name,
+      'shuffleEnabled': snapshot.shuffleEnabled,
       'currentIndex': snapshot.currentIndex,
       'positionMs': snapshot.position.inMilliseconds,
       'volume': snapshot.volume,
@@ -53,8 +78,40 @@ final class JsonSessionStore {
       final data =
           jsonDecode(await file.readAsString()) as Map<String, Object?>;
       final rawUris = (data['uris'] as List<Object?>?) ?? const [];
+      final rawEntries = (data['entries'] as List<Object?>?) ?? const [];
       final items = <PlayableItem>[];
+      final entries = <PlaybackQueueEntry>[];
       var skipped = 0;
+      for (final raw in rawEntries.whereType<Map<Object?, Object?>>()) {
+        final id = raw['entryId'] as String?;
+        final uriText = raw['uri'] as String?;
+        if (id == null || uriText == null) {
+          skipped++;
+          continue;
+        }
+        final uri = Uri.tryParse(uriText);
+        if (uri == null ||
+            uri.scheme != 'file' ||
+            !await File.fromUri(uri).exists()) {
+          skipped++;
+          continue;
+        }
+        final title =
+            raw['title'] as String? ??
+            Uri.decodeComponent(File.fromUri(uri).uri.pathSegments.last);
+        entries.add(
+          PlaybackQueueEntry(
+            entryId: id,
+            item: PlayableItem(
+              id: uriText,
+              title: title,
+              artist: raw['artist'] as String?,
+              source: MediaSource(id: uriText, uri: uri, kind: MediaKind.audio),
+            ),
+          ),
+        );
+      }
+      // v0.3.1 compatibility: old sessions carry URIs only; runtime creates ids.
       for (final value in rawUris.whereType<String>()) {
         final uri = Uri.parse(value);
         if (uri.scheme != 'file' || !await File.fromUri(uri).exists()) {
@@ -70,7 +127,7 @@ final class JsonSessionStore {
           ),
         );
       }
-      if (items.isEmpty) {
+      if (items.isEmpty && entries.isEmpty) {
         return PersistedSession(
           items: const [],
           currentIndex: -1,
@@ -80,9 +137,26 @@ final class JsonSessionStore {
           skippedItems: skipped,
         );
       }
+      final validIds = entries.map((e) => e.entryId).toSet();
+      final order = ((data['playOrderEntryIds'] as List<Object?>?) ?? const [])
+          .whereType<String>()
+          .where(validIds.contains)
+          .toList();
+      final mode =
+          RepeatMode.values
+              .where((e) => e.name == data['repeatMode'])
+              .firstOrNull ??
+          RepeatMode.off;
       final rawIndex = (data['currentIndex'] as num?)?.toInt() ?? 0;
       return PersistedSession(
-        items: items,
+        items: entries.isEmpty ? items : entries.map((e) => e.item).toList(),
+        entries: entries,
+        currentEntryId: data['currentEntryId'] as String?,
+        playOrderEntryIds: order.length == entries.length
+            ? order
+            : entries.map((e) => e.entryId).toList(),
+        repeatMode: mode,
+        shuffleEnabled: data['shuffleEnabled'] as bool? ?? false,
         currentIndex: rawIndex.clamp(0, items.length - 1),
         position: Duration(
           milliseconds: (data['positionMs'] as num?)?.toInt() ?? 0,

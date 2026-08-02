@@ -1,9 +1,18 @@
 # MpvPlay Agent Context Handoff
 
+## v0.4 in progress
+
+v0.3.1 is ACCEPTED. v0.4 adds playback modes and queue management while Media
+Library Schema v3 remains unchanged. PlaybackRuntime is the sole authority for
+queue entries, actual order, current entry, repeat/shuffle and restore. Queue
+entry identity is UUIDv7 per enqueue. JSON session storage, not Drift,
+persists runtime queue state. UI does not own a second mutable queue;
+LibraryPlaybackMapper remains the only app-layer bridge from library tracks.
+
 ## Project and version
 
 MpvPlay is a Windows-first Flutter music player. v0.1.1 is complete; the
-current task is v0.3.1 playback history, built on the frozen Media Library 2.0
+current task is v0.4 playback modes and queue management, built on the frozen Media Library 2.0
 baseline.
 
 ## Architecture

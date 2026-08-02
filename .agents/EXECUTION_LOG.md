@@ -2,6 +2,8 @@
 
 | Time (UTC) | Work package | Completed work | Validation | Remaining risk / next step |
 | --- | --- | --- | --- | --- |
+| 2026-08-02 | v0.4 local validation | Added queue mode controls, entry identity behavior, JSON v2 session compatibility, library queue actions and v0.4 docs. | 14 runtime, 1 platform, 43 media-library, 8 real-libmpv and 7 Flutter tests pass; root analysis has no errors; Windows Release built. | Commit, remote CI/artifact, Draft PR and single Version Gate. |
+| 2026-08-02 | v0.4 core | Started runtime-owned queue entry, repeat/shuffle, queue editing and JSON session compatibility implementation. | Protocol/runtime analysis and focused regression in progress. | Complete queue-specific tests, app regression, Windows CI, release and the single Gate. |
 | 2026-08-01 | Start | Synced `main` and created `agent/v0.1.1-playback-verification`. | `git pull --ff-only origin main` | Implement deterministic fixtures and real-engine tests. |
 | 2026-08-01 | WP-03 to WP-06 | Added generated WAV/corrupt fixtures, adapter-local null-output configuration, and real libmpv integration tests. | 20 Dart tests passed with bundled libmpv DLL on PATH. | Human listening remains required. |
 | 2026-08-01 | WP-08 to WP-09 | Added Windows CI and split application bootstrap/composition/presentation. | Flutter regression pending final command. | Push/PR blocked by expired GitHub token. |

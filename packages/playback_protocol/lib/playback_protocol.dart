@@ -12,6 +12,9 @@ enum PlaybackStatus {
   disposed,
 }
 
+/// Runtime-owned completion policy.  UI never interprets completion events.
+enum RepeatMode { off, all, one }
+
 enum PlaybackFailureCode {
   fileNotFound,
   unsupportedFormat,
@@ -21,6 +24,10 @@ enum PlaybackFailureCode {
   playbackFailed,
   invalidCommand,
   invalidQueueState,
+  queueEntryNotFound,
+  invalidQueueIndex,
+  emptyQueue,
+  sessionRestoreFailure,
   runtimeDisposed,
   unknownFailure,
 }
@@ -36,6 +43,20 @@ final class PlaybackFailure {
   final String message;
   final bool recoverable;
   final String? technicalDetails;
+}
+
+/// An occurrence in a queue. Identical tracks may deliberately have distinct ids.
+final class PlaybackQueueEntry {
+  const PlaybackQueueEntry({required this.entryId, required this.item});
+  final String entryId;
+  final PlayableItem item;
+  @override
+  bool operator ==(Object other) =>
+      other is PlaybackQueueEntry &&
+      other.entryId == entryId &&
+      other.item == item;
+  @override
+  int get hashCode => Object.hash(entryId, item);
 }
 
 sealed class PlaybackCommand {
@@ -63,6 +84,26 @@ final class LoadQueue extends PlaybackCommand {
   final int initialIndex;
   final Duration? startPosition;
   final bool autoPlay;
+}
+
+final class RestoreQueue extends PlaybackCommand {
+  const RestoreQueue({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.entries,
+    required this.currentEntryId,
+    required this.playOrderEntryIds,
+    this.repeatMode = RepeatMode.off,
+    this.shuffleEnabled = false,
+    this.startPosition,
+  });
+  final List<PlaybackQueueEntry> entries;
+  final String? currentEntryId;
+  final List<String> playOrderEntryIds;
+  final RepeatMode repeatMode;
+  final bool shuffleEnabled;
+  final Duration? startPosition;
 }
 
 final class Play extends PlaybackCommand {
@@ -115,6 +156,7 @@ final class SkipPrevious extends PlaybackCommand {
   });
 }
 
+/// Legacy index command retained for source compatibility; new UI uses entry identity.
 final class SelectQueueItem extends PlaybackCommand {
   const SelectQueueItem({
     required super.commandId,
@@ -123,6 +165,86 @@ final class SelectQueueItem extends PlaybackCommand {
     required this.index,
   });
   final int index;
+}
+
+final class PlayQueueEntry extends PlaybackCommand {
+  const PlayQueueEntry({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.entryId,
+  });
+  final String entryId;
+}
+
+final class AppendToQueue extends PlaybackCommand {
+  const AppendToQueue({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.items,
+  });
+  final List<PlayableItem> items;
+}
+
+final class InsertNext extends PlaybackCommand {
+  const InsertNext({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.items,
+  });
+  final List<PlayableItem> items;
+}
+
+final class RemoveQueueEntry extends PlaybackCommand {
+  const RemoveQueueEntry({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.entryId,
+  });
+  final String entryId;
+}
+
+final class MoveQueueEntry extends PlaybackCommand {
+  const MoveQueueEntry({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.entryId,
+    required this.targetIndex,
+  });
+  final String entryId;
+  final int targetIndex;
+}
+
+final class ClearQueue extends PlaybackCommand {
+  const ClearQueue({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+  });
+}
+
+final class SetShuffleEnabled extends PlaybackCommand {
+  const SetShuffleEnabled({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.enabled,
+  });
+  final bool enabled;
+}
+
+final class SetRepeatMode extends PlaybackCommand {
+  const SetRepeatMode({
+    required super.commandId,
+    required super.sessionId,
+    required super.issuedAt,
+    required this.repeatMode,
+  });
+  final RepeatMode repeatMode;
 }
 
 final class SetVolume extends PlaybackCommand {
@@ -158,18 +280,32 @@ final class PlaybackSnapshot {
     required this.volume,
     required this.muted,
     required this.failure,
-  }) : queueItems = List.unmodifiable(queueItems);
+    List<PlaybackQueueEntry>? queueEntries,
+    List<String>? playOrderEntryIds,
+    this.currentEntryId,
+    this.repeatMode = RepeatMode.off,
+    this.shuffleEnabled = false,
+  }) : queueItems = List.unmodifiable(queueItems),
+       queueEntries = List.unmodifiable(queueEntries ?? const []),
+       playOrderEntryIds = List.unmodifiable(playOrderEntryIds ?? const []);
   final String sessionId;
   final int revision;
   final PlaybackStatus status;
   final PlayableItem? currentItem;
   final Duration position;
   final Duration duration;
+
+  /// Actual runtime play order, retained for existing consumers.
   final List<PlayableItem> queueItems;
   final int currentIndex;
   final double volume;
   final bool muted;
   final PlaybackFailure? failure;
+  final List<PlaybackQueueEntry> queueEntries;
+  final List<String> playOrderEntryIds;
+  final String? currentEntryId;
+  final RepeatMode repeatMode;
+  final bool shuffleEnabled;
 }
 
 sealed class PlaybackEvent {

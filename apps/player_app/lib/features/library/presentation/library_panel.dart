@@ -13,9 +13,16 @@ import '../../collections/presentation/playlists_page.dart';
 import '../../history/presentation/playback_history_page.dart';
 
 class LibraryPanel extends ConsumerStatefulWidget {
-  const LibraryPanel({super.key, required this.onPlay});
+  const LibraryPanel({
+    super.key,
+    required this.onPlay,
+    this.onPlayNext,
+    this.onAppend,
+  });
   final Future<void> Function(List<LibraryTrack> tracks, LibraryTrack selected)
   onPlay;
+  final Future<void> Function(LibraryTrack track)? onPlayNext;
+  final Future<void> Function(LibraryTrack track)? onAppend;
 
   @override
   ConsumerState<LibraryPanel> createState() => _LibraryPanelState();
@@ -236,6 +243,26 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
                                 track.id,
                               ),
                               icon: const Icon(Icons.playlist_add),
+                            ),
+                            PopupMenuButton<String>(
+                              tooltip: 'Queue actions',
+                              enabled: track.available,
+                              onSelected: (value) {
+                                if (value == 'next')
+                                  widget.onPlayNext?.call(track);
+                                if (value == 'append')
+                                  widget.onAppend?.call(track);
+                              },
+                              itemBuilder: (_) => const [
+                                PopupMenuItem(
+                                  value: 'next',
+                                  child: Text('Play next'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'append',
+                                  child: Text('Add to queue'),
+                                ),
+                              ],
                             ),
                           ],
                         ),

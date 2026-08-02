@@ -51,15 +51,27 @@ final class AppBootstrap {
     final restored = await store.restore();
     if (restored != null && restored.items.isNotEmpty) {
       await runtime.send(
-        LoadQueue(
-          commandId: 'restore',
-          sessionId: runtime.runtimeSessionId,
-          issuedAt: DateTime.now(),
-          items: restored.items,
-          initialIndex: restored.currentIndex,
-          startPosition: restored.position,
-          autoPlay: false,
-        ),
+        restored.entries.isEmpty
+            ? LoadQueue(
+                commandId: 'restore',
+                sessionId: runtime.runtimeSessionId,
+                issuedAt: DateTime.now(),
+                items: restored.items,
+                initialIndex: restored.currentIndex,
+                startPosition: restored.position,
+                autoPlay: false,
+              )
+            : RestoreQueue(
+                commandId: 'restore',
+                sessionId: runtime.runtimeSessionId,
+                issuedAt: DateTime.now(),
+                entries: restored.entries,
+                currentEntryId: restored.currentEntryId,
+                playOrderEntryIds: restored.playOrderEntryIds,
+                repeatMode: restored.repeatMode,
+                shuffleEnabled: restored.shuffleEnabled,
+                startPosition: restored.position,
+              ),
       );
       await runtime.send(
         SetVolume(

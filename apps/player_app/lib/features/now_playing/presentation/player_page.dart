@@ -1,5 +1,5 @@
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide RepeatMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:playback_protocol/playback_protocol.dart';
 import 'package:player_core/player_core.dart';
@@ -86,6 +86,47 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
       appBar: AppBar(
         title: const Text('MpvPlay'),
         actions: [
+          IconButton(
+            tooltip: snapshot.shuffleEnabled
+                ? 'Disable shuffle'
+                : 'Enable shuffle',
+            icon: Icon(
+              snapshot.shuffleEnabled ? Icons.shuffle_on : Icons.shuffle,
+            ),
+            onPressed: () {
+              final m = commandMetadata(snapshot, 'shuffle');
+              _send(
+                SetShuffleEnabled(
+                  commandId: m.commandId,
+                  sessionId: m.sessionId,
+                  issuedAt: m.issuedAt,
+                  enabled: !snapshot.shuffleEnabled,
+                ),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: 'Repeat: ${snapshot.repeatMode.name}',
+            icon: Icon(
+              snapshot.repeatMode == RepeatMode.one
+                  ? Icons.repeat_one
+                  : Icons.repeat,
+            ),
+            onPressed: () {
+              final mode =
+                  RepeatMode.values[(snapshot.repeatMode.index + 1) %
+                      RepeatMode.values.length];
+              final m = commandMetadata(snapshot, 'repeat');
+              _send(
+                SetRepeatMode(
+                  commandId: m.commandId,
+                  sessionId: m.sessionId,
+                  issuedAt: m.issuedAt,
+                  repeatMode: mode,
+                ),
+              );
+            },
+          ),
           Center(child: Text(snapshot.status.name)),
           const SizedBox(width: 20),
         ],
@@ -261,9 +302,54 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
               child: Card(
                 child: Column(
                   children: [
-                    const ListTile(
+                    ListTile(
                       leading: Icon(Icons.queue_music),
-                      title: Text('Playback queue'),
+                      title: const Text('Playback queue'),
+                      subtitle: Text(
+                        'Actual play order · ${snapshot.queueEntries.length} entries',
+                      ),
+                      trailing: IconButton(
+                        tooltip: 'Clear queue',
+                        onPressed: snapshot.queueEntries.isEmpty
+                            ? null
+                            : () async {
+                                final clear = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Clear playback queue?'),
+                                    content: const Text(
+                                      'This only clears the playback queue. Your library, favorites, playlists, and history stay unchanged.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Clear'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (clear == true) {
+                                  final m = commandMetadata(
+                                    snapshot,
+                                    'clear-queue',
+                                  );
+                                  await _send(
+                                    ClearQueue(
+                                      commandId: m.commandId,
+                                      sessionId: m.sessionId,
+                                      issuedAt: m.issuedAt,
+                                    ),
+                                  );
+                                }
+                              },
+                        icon: const Icon(Icons.clear_all),
+                      ),
                     ),
                     const Divider(height: 1),
                     Expanded(
@@ -272,24 +358,85 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                           : ListView.builder(
                               itemCount: snapshot.queueItems.length,
                               itemBuilder: (context, index) {
-                                final item = snapshot.queueItems[index];
+                                final entry = snapshot.queueEntries[index];
+                                final item = entry.item;
                                 return ListTile(
-                                  selected: index == snapshot.currentIndex,
+                                  selected:
+                                      entry.entryId == snapshot.currentEntryId,
                                   title: Text(item.title),
+                                  subtitle: item.artist == null
+                                      ? null
+                                      : Text(item.artist!),
                                   onTap: () {
                                     final m = commandMetadata(
                                       snapshot,
-                                      'select',
+                                      'play-entry',
                                     );
                                     _send(
-                                      SelectQueueItem(
+                                      PlayQueueEntry(
                                         commandId: m.commandId,
                                         sessionId: m.sessionId,
                                         issuedAt: m.issuedAt,
-                                        index: index,
+                                        entryId: entry.entryId,
                                       ),
                                     );
                                   },
+                                  trailing: PopupMenuButton<String>(
+                                    onSelected: (value) {
+                                      final m = commandMetadata(
+                                        snapshot,
+                                        value,
+                                      );
+                                      if (value == 'remove')
+                                        _send(
+                                          RemoveQueueEntry(
+                                            commandId: m.commandId,
+                                            sessionId: m.sessionId,
+                                            issuedAt: m.issuedAt,
+                                            entryId: entry.entryId,
+                                          ),
+                                        );
+                                      if (value == 'up' && index > 0)
+                                        _send(
+                                          MoveQueueEntry(
+                                            commandId: m.commandId,
+                                            sessionId: m.sessionId,
+                                            issuedAt: m.issuedAt,
+                                            entryId: entry.entryId,
+                                            targetIndex: index - 1,
+                                          ),
+                                        );
+                                      if (value == 'down' &&
+                                          index + 1 <
+                                              snapshot.queueEntries.length)
+                                        _send(
+                                          MoveQueueEntry(
+                                            commandId: m.commandId,
+                                            sessionId: m.sessionId,
+                                            issuedAt: m.issuedAt,
+                                            entryId: entry.entryId,
+                                            targetIndex: index + 1,
+                                          ),
+                                        );
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'remove',
+                                        child: Text('Remove'),
+                                      ),
+                                      if (index > 0)
+                                        const PopupMenuItem(
+                                          value: 'up',
+                                          child: Text('Move up'),
+                                        ),
+                                      if (index + 1 <
+                                          snapshot.queueEntries.length)
+                                        const PopupMenuItem(
+                                          value: 'down',
+                                          child: Text('Move down'),
+                                        ),
+                                    ],
+                                  ),
                                 );
                               },
                             ),
@@ -304,6 +451,9 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
               child: LibraryPanel(
                 onPlay: (tracks, selected) =>
                     _playLibraryTracks(snapshot, tracks, selected),
+                onPlayNext: (track) =>
+                    _queueLibraryTrack(snapshot, track, next: true),
+                onAppend: (track) => _queueLibraryTrack(snapshot, track),
               ),
             ),
           ],
@@ -351,6 +501,34 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
         initialIndex: selectedIndex,
         autoPlay: true,
       ),
+    );
+  }
+
+  Future<void> _queueLibraryTrack(
+    PlaybackSnapshot snapshot,
+    LibraryTrack track, {
+    bool next = false,
+  }) {
+    if (!track.available) return Future.value();
+    final item = const LibraryPlaybackMapper().mapTrack(track);
+    final meta = commandMetadata(
+      snapshot,
+      next ? 'library-next' : 'library-append',
+    );
+    return _send(
+      next
+          ? InsertNext(
+              commandId: meta.commandId,
+              sessionId: meta.sessionId,
+              issuedAt: meta.issuedAt,
+              items: [item],
+            )
+          : AppendToQueue(
+              commandId: meta.commandId,
+              sessionId: meta.sessionId,
+              issuedAt: meta.issuedAt,
+              items: [item],
+            ),
     );
   }
 }

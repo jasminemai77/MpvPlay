@@ -254,4 +254,71 @@ void main() {
     );
     expect(runtime.currentSnapshot.failure?.recoverable, isTrue);
   });
+
+  test(
+    'queue entries keep independent identities for duplicate tracks',
+    () async {
+      await runtime.send(
+        command(runtime, 'load', value: [item('same'), item('same')]),
+      );
+      final snapshot = runtime.currentSnapshot;
+      expect(snapshot.queueEntries, hasLength(2));
+      expect(
+        snapshot.queueEntries[0].entryId,
+        isNot(snapshot.queueEntries[1].entryId),
+      );
+      expect(snapshot.currentEntryId, snapshot.queueEntries.first.entryId);
+    },
+  );
+
+  test('repeat one reloads only for natural completion', () async {
+    await runtime.send(command(runtime, 'load', value: [item('a'), item('b')]));
+    final firstGeneration = engine.generation;
+    await runtime.send(
+      SetRepeatMode(
+        commandId: 'one',
+        sessionId: runtime.runtimeSessionId,
+        issuedAt: DateTime.now(),
+        repeatMode: RepeatMode.one,
+      ),
+    );
+    engine.emit(EngineCompleted(firstGeneration));
+    await Future<void>.delayed(Duration.zero);
+    expect(runtime.currentSnapshot.currentItem?.id, 'a');
+    await runtime.send(command(runtime, 'next'));
+    expect(runtime.currentSnapshot.currentItem?.id, 'b');
+  });
+
+  test(
+    'insert next is the actual immediate successor while shuffled',
+    () async {
+      await runtime.send(
+        command(runtime, 'load', value: [item('a'), item('b'), item('c')]),
+      );
+      await runtime.send(
+        SetShuffleEnabled(
+          commandId: 'shuffle',
+          sessionId: runtime.runtimeSessionId,
+          issuedAt: DateTime.now(),
+          enabled: true,
+        ),
+      );
+      await runtime.send(
+        InsertNext(
+          commandId: 'insert',
+          sessionId: runtime.runtimeSessionId,
+          issuedAt: DateTime.now(),
+          items: [item('x'), item('y')],
+        ),
+      );
+      final snapshot = runtime.currentSnapshot;
+      expect(
+        snapshot.queueItems
+            .skip(snapshot.currentIndex + 1)
+            .take(2)
+            .map((e) => e.id),
+        orderedEquals(['x', 'y']),
+      );
+    },
+  );
 }
