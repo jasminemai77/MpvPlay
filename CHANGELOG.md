@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (unreleased)
+
+- Added durable recent playback history and cumulative per-track play counts.
+- Added Schema v3 with tested v2-to-v3 and v1-to-v2-to-v3 migrations.
+- Added App-layer playback-start observation and History replay/clear UI.
+
 ## 0.3.0 (unreleased)
 
 - Added persistent favorite tracks and flat user playlists.

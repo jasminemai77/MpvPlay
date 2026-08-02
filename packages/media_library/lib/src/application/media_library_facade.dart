@@ -5,10 +5,11 @@ import 'package:uuid/uuid.dart';
 import '../domain/library_models.dart';
 import '../infrastructure/database/dao/library_root_dao.dart';
 import '../infrastructure/database/dao/library_track_dao.dart';
+import '../infrastructure/database/dao/playback_history_dao.dart';
 import '../infrastructure/database/dao/library_collection_dao.dart';
 import '../infrastructure/database/dao/user_collections_dao.dart';
 import '../infrastructure/database/media_library_database.dart'
-    hide LibraryRoot, UserPlaylist;
+    hide LibraryRoot, PlaybackHistoryEntry, UserPlaylist;
 import '../infrastructure/database/database_connection.dart';
 import '../infrastructure/filesystem/path_normalizer.dart';
 import 'library_scan_coordinator.dart';
@@ -22,16 +23,19 @@ final class MediaLibraryFacade {
         _database,
         LibraryTrackDao(_database),
       ),
+      _history = PlaybackHistoryDao(_database, LibraryTrackDao(_database)),
       query = LibraryQueryService(
         LibraryRootDao(_database),
         LibraryTrackDao(_database),
         LibraryCollectionDao(_database),
         UserCollectionsDao(_database, LibraryTrackDao(_database)),
+        PlaybackHistoryDao(_database, LibraryTrackDao(_database)),
       );
 
   final MediaLibraryDatabase _database;
   final LibraryRootDao _roots;
   final UserCollectionsDao _userCollections;
+  final PlaybackHistoryDao _history;
   final LibraryQueryService query;
   static const _uuid = Uuid();
   static const _normalizer = WindowsPathNormalizer();
@@ -87,6 +91,23 @@ final class MediaLibraryFacade {
     String playlistId,
     List<String> orderedTrackIds,
   ) => _userCollections.reorderPlaylistTracks(playlistId, orderedTrackIds);
+  Stream<List<PlaybackHistoryEntry>> watchRecentPlaybackHistory({
+    int limit = 200,
+  }) => query.watchRecentPlaybackHistory(limit: limit);
+  Stream<TrackPlaybackStats?> watchTrackPlaybackStats(String trackId) =>
+      query.watchTrackPlaybackStats(trackId);
+  Stream<int> watchMissingHistoryTrackCount() =>
+      query.watchMissingHistoryTrackCount();
+  Future<void> recordPlaybackStarted({
+    required String trackId,
+    required String playbackSessionId,
+    required DateTime startedAt,
+  }) => _history.recordStarted(
+    trackPublicId: trackId,
+    playbackSessionId: playbackSessionId,
+    startedAt: startedAt,
+  );
+  Future<void> clearPlaybackHistory() => _history.clear();
   LibraryScanCoordinator createScanCoordinator() =>
       LibraryScanCoordinator(_database);
   Future<void> close() => _database.close();
