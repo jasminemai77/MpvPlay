@@ -324,6 +324,9 @@ final class LibraryScanCoordinator {
     await _runs[rootId];
   }
 
+  bool get hasActiveScan => _activeRootId != null;
+  String? get activeRootId => _activeRootId;
+
   /// Stable, serial scan-all policy. A failed root never prevents later roots.
   Future<ScanAllResult> scanAllEnabledRoots() async {
     if (_activeRootId != null) {

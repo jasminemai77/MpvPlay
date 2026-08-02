@@ -48,5 +48,10 @@ final class LibraryController {
   }
 
   ScanCancellationToken rescan(String rootId) => _scanner.scan(rootId);
-  Future<void> removeRoot(String rootId) => _library.removeRoot(rootId);
+
+  /// Root disablement is serialized with the single scan coordinator.
+  Future<void> removeRoot(String rootId) async {
+    await _scanner.cancelActiveScan();
+    await _library.removeRoot(rootId);
+  }
 }
