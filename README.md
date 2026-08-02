@@ -1,8 +1,8 @@
 # MpvPlay
 
-MpvPlay is an open-source Flutter music player for Windows. v0.3.1 adds
-durable playback history and cumulative play counts on top of favorites,
-playlists, safe local scans, metadata, search, and queue construction.
+MpvPlay is an open-source Flutter music player for Windows. v0.4 adds a
+runtime-owned editable queue, repeat modes, deterministic-cycle shuffle, and
+session restore on top of the local media library and playback history.
 
 ## Run
 
@@ -20,7 +20,11 @@ Build with `flutter build windows --release` from `apps/player_app`. Supported p
 
 `UI -> PlaybackClient -> PlaybackRuntime -> PlaybackEngine -> MpvPlaybackEngine -> media_kit/libmpv`
 
-`PlaybackRuntime` is the only authority for the queue and observed playback state. UI renders `PlaybackSnapshot` and sends `PlaybackCommand`; it neither keeps a playback-state copy nor imports `media_kit`. `media_kit` appears only in `packages/playback_engine_mpv`.
+`PlaybackRuntime` is the only authority for queue entries, actual play order,
+current entry, shuffle/repeat policy, and observed playback state. UI renders
+`PlaybackSnapshot` and sends `PlaybackCommand`; it neither keeps a
+playback-state copy nor imports `media_kit`. `media_kit` appears only in
+`packages/playback_engine_mpv`.
 
 The App-layer history observer records the first `playing` snapshot of a
 library-track cycle through `MediaLibraryFacade`. It does not feed data back to
