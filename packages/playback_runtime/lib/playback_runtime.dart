@@ -69,13 +69,11 @@ final class InProcessPlaybackClient implements PlaybackClient {
 
 final class PlaybackRuntime {
   PlaybackRuntime({
-    required PlaybackEngine engine,
+    required this._engine,
     String? sessionId,
-    PlaybackLogSink? logSink,
+    this._logSink,
     ShuffleStrategy? shuffleStrategy,
-  }) : _engine = engine,
-       _logSink = logSink,
-       _shuffle = shuffleStrategy ?? RandomShuffleStrategy(),
+  }) : _shuffle = shuffleStrategy ?? RandomShuffleStrategy(),
        runtimeSessionId = sessionId ?? _newSessionId() {
     _snapshot = _makeSnapshot();
   }
@@ -116,10 +114,11 @@ final class PlaybackRuntime {
     required int restoredItems,
     int skippedItems = 0,
   }) {
-    if (!disposedFlag)
+    if (!disposedFlag) {
       _eventController.add(
         SessionRestored(restoredItems, skippedItems: skippedItems),
       );
+    }
   }
 
   Future<void> initialize() async {
@@ -143,10 +142,11 @@ final class PlaybackRuntime {
   Future<void> send(PlaybackCommand command) {
     if (disposedFlag) return Future.error(StateError('RuntimeDisposed'));
     if (!_started) return Future.error(StateError('RuntimeNotInitialized'));
-    if (command.sessionId != runtimeSessionId)
+    if (command.sessionId != runtimeSessionId) {
       return Future.error(
         ArgumentError('Command session does not match runtime session'),
       );
+    }
     final operation = _tail.then((_) => _handle(command));
     _tail = operation.catchError((_) {});
     return operation;
@@ -251,8 +251,9 @@ final class PlaybackRuntime {
       );
       return;
     }
-    if (command.initialIndex < 0 || command.initialIndex >= _base.length)
+    if (command.initialIndex < 0 || command.initialIndex >= _base.length) {
       throw RangeError.index(command.initialIndex, _base, 'initialIndex');
+    }
     _cursor = command.initialIndex;
     _currentId = _order[_cursor];
     await _loadCurrent(
@@ -491,8 +492,9 @@ final class PlaybackRuntime {
   }
 
   Future<void> _seek(Duration requested) async {
-    if (_currentId == null || _snapshot.status == PlaybackStatus.loading)
+    if (_currentId == null || _snapshot.status == PlaybackStatus.loading) {
       return;
+    }
     final duration = _snapshot.duration;
     final position = requested < Duration.zero
         ? Duration.zero
@@ -531,7 +533,7 @@ final class PlaybackRuntime {
         generation: generation,
       );
     } on FileSystemException catch (e, s) {
-      if (generation == loadGeneration)
+      if (generation == loadGeneration) {
         _fail(
           PlaybackFailureCode.fileNotFound,
           'The selected file is no longer available.',
@@ -539,8 +541,9 @@ final class PlaybackRuntime {
           s,
           true,
         );
+      }
     } catch (e, s) {
-      if (generation == loadGeneration)
+      if (generation == loadGeneration) {
         _fail(
           PlaybackFailureCode.mediaLoadFailed,
           'Unable to load ${entry.item.title}.',
@@ -548,6 +551,7 @@ final class PlaybackRuntime {
           s,
           true,
         );
+      }
     }
   }
 

@@ -387,7 +387,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                                         snapshot,
                                         value,
                                       );
-                                      if (value == 'remove')
+                                      if (value == 'remove') {
                                         _send(
                                           RemoveQueueEntry(
                                             commandId: m.commandId,
@@ -396,7 +396,8 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                                             entryId: entry.entryId,
                                           ),
                                         );
-                                      if (value == 'up' && index > 0)
+                                      }
+                                      if (value == 'up' && index > 0) {
                                         _send(
                                           MoveQueueEntry(
                                             commandId: m.commandId,
@@ -406,9 +407,10 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                                             targetIndex: index - 1,
                                           ),
                                         );
+                                      }
                                       if (value == 'down' &&
                                           index + 1 <
-                                              snapshot.queueEntries.length)
+                                              snapshot.queueEntries.length) {
                                         _send(
                                           MoveQueueEntry(
                                             commandId: m.commandId,
@@ -418,6 +420,7 @@ class _PlayerPageState extends ConsumerState<PlayerPage> {
                                             targetIndex: index + 1,
                                           ),
                                         );
+                                      }
                                     },
                                     itemBuilder: (context) => [
                                       const PopupMenuItem(

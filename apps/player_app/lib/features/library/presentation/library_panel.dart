@@ -248,10 +248,12 @@ class _LibraryPanelState extends ConsumerState<LibraryPanel> {
                               tooltip: 'Queue actions',
                               enabled: track.available,
                               onSelected: (value) {
-                                if (value == 'next')
+                                if (value == 'next') {
                                   widget.onPlayNext?.call(track);
-                                if (value == 'append')
+                                }
+                                if (value == 'append') {
                                   widget.onAppend?.call(track);
+                                }
                               },
                               itemBuilder: (_) => const [
                                 PopupMenuItem(
