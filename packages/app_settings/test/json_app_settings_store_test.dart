@@ -56,6 +56,38 @@ void main() {
     },
   );
 
+  test('v1 settings migrate to v2 with exit-to-application default', () async {
+    await file.writeAsString(
+      '{"version":1,"theme":"dark","scanOnStartup":true}',
+    );
+    final store = JsonAppSettingsStore(file);
+    await store.load();
+    expect(store.current.version, 2);
+    expect(store.current.theme, AppThemePreference.dark);
+    expect(
+      store.current.windowCloseBehavior,
+      WindowCloseBehavior.exitApplication,
+    );
+    await store.setWindowCloseBehavior(WindowCloseBehavior.hideToTray);
+    final restored = JsonAppSettingsStore(file);
+    await restored.load();
+    expect(
+      restored.current.windowCloseBehavior,
+      WindowCloseBehavior.hideToTray,
+    );
+    expect(restored.current.version, 2);
+  });
+
+  test('unknown close behavior safely falls back', () async {
+    await file.writeAsString('{"version":2,"windowCloseBehavior":"unknown"}');
+    final store = JsonAppSettingsStore(file);
+    await store.load();
+    expect(
+      store.current.windowCloseBehavior,
+      WindowCloseBehavior.exitApplication,
+    );
+  });
+
   test('future versions are backed up and reset persists defaults', () async {
     await file.writeAsString('{"version":99,"theme":"dark"}');
     final store = JsonAppSettingsStore(file);

@@ -17,6 +17,10 @@ jobs:
           cache: true
       - run: flutter --version
       - run: dart --version
+      - name: Verify Windows native toolchain
+        run: |
+          rustc --version
+          cargo --version
       - run: flutter pub get
       - run: dart run tools/test_media_generator/generate.dart
       - name: Generate Drift sources

@@ -16,6 +16,10 @@ import '../features/now_playing/application/playback_providers.dart';
 import '../features/library/application/library_providers.dart';
 import '../features/history/application/playback_history_observer.dart';
 import '../features/settings/application/settings_providers.dart';
+import '../platform/windows/desktop_tray_adapter.dart';
+import '../platform/windows/desktop_window_adapter.dart';
+import '../platform/windows/windows_desktop_integration_controller.dart';
+import '../platform/windows/windows_media_session_adapter.dart';
 
 final class AppBootstrap {
   AppBootstrap._(
@@ -26,6 +30,7 @@ final class AppBootstrap {
     this._historyObserver,
     this._snapshotSubscription,
     this._settings,
+    this._desktopIntegration,
   );
   final PlaybackClient _client;
   final PlaybackSnapshot _initialSnapshot;
@@ -34,6 +39,7 @@ final class AppBootstrap {
   final AppPlaybackHistoryObserver _historyObserver;
   final StreamSubscription<PlaybackSnapshot> _snapshotSubscription;
   final AppSettingsRepository _settings;
+  final WindowsDesktopIntegrationController? _desktopIntegration;
 
   static Future<AppBootstrap> create() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -119,6 +125,18 @@ final class AppBootstrap {
       library: library,
     );
     final snapshotSubscription = runtime.snapshots.listen(store.save);
+    WindowsDesktopIntegrationController? desktopIntegration;
+    if (Platform.isWindows) {
+      desktopIntegration = WindowsDesktopIntegrationController(
+        client: client,
+        mediaSession: SmtcWindowsMediaSessionAdapter(),
+        tray: TrayManagerDesktopTrayAdapter(),
+        window: WindowManagerDesktopWindowAdapter(),
+        closeBehavior: () => settings.current.windowCloseBehavior,
+        initialSnapshot: runtime.currentSnapshot,
+      );
+      await desktopIntegration.initialize();
+    }
     return AppBootstrap._(
       client,
       runtime.currentSnapshot,
@@ -127,6 +145,7 @@ final class AppBootstrap {
       historyObserver,
       snapshotSubscription,
       settings,
+      desktopIntegration,
     );
   }
 
@@ -149,8 +168,9 @@ final class AppBootstrap {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    // Stop accepting scan work, wait for cancellation, then drain all durable
+    // Stop accepting platform commands first, then drain scans and durable
     // writers before closing the library database or PlaybackRuntime.
+    await _desktopIntegration?.dispose();
     await _scanner.close();
     await _settings.close();
     await _historyObserver.close();

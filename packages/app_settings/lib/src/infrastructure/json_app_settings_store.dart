@@ -82,7 +82,7 @@ final class JsonAppSettingsStore implements AppSettingsRepository {
         throw const FormatException('Settings root must be an object');
       }
       final version = decoded['version'];
-      if (version is! num || version.toInt() > 1) {
+      if (version is! num || version.toInt() > 2) {
         await _recover(
           AppSettingsFailure(
             AppSettingsFailureCode.unsupportedSettingsVersion,
@@ -91,8 +91,9 @@ final class JsonAppSettingsStore implements AppSettingsRepository {
         );
         return;
       }
+      final parsedVersion = version.toInt();
       _current = AppPreferences(
-        version: 1,
+        version: 2,
         theme: _theme(decoded['theme']),
         scanOnStartup: decoded['scanOnStartup'] is bool
             ? decoded['scanOnStartup']! as bool
@@ -100,6 +101,9 @@ final class JsonAppSettingsStore implements AppSettingsRepository {
         scanNewRootsImmediately: decoded['scanNewRootsImmediately'] is bool
             ? decoded['scanNewRootsImmediately']! as bool
             : true,
+        windowCloseBehavior: _windowCloseBehavior(
+          parsedVersion >= 2 ? decoded['windowCloseBehavior'] : null,
+        ),
       );
     } catch (error) {
       await _recover(
@@ -116,6 +120,10 @@ final class JsonAppSettingsStore implements AppSettingsRepository {
     'light' => AppThemePreference.light,
     'dark' => AppThemePreference.dark,
     _ => AppThemePreference.system,
+  };
+  WindowCloseBehavior _windowCloseBehavior(Object? value) => switch (value) {
+    'hideToTray' => WindowCloseBehavior.hideToTray,
+    _ => WindowCloseBehavior.exitApplication,
   };
   Future<void> _recover(AppSettingsFailure failure) async {
     try {
@@ -139,6 +147,9 @@ final class JsonAppSettingsStore implements AppSettingsRepository {
   @override
   Future<void> setScanNewRootsImmediately(bool value) =>
       _set(_current.copyWith(scanNewRootsImmediately: value));
+  @override
+  Future<void> setWindowCloseBehavior(WindowCloseBehavior value) =>
+      _set(_current.copyWith(windowCloseBehavior: value));
   @override
   Future<void> resetToDefaults() => _set(AppPreferences.defaults);
   Future<void> _set(AppPreferences next) {

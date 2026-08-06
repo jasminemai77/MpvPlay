@@ -104,6 +104,20 @@ class SettingsPage extends ConsumerWidget {
             onChanged: controller.setScanNewRootsImmediately,
           ),
           const Divider(),
+          const ListTile(title: Text('Window closing')),
+          RadioListTile(
+            value: WindowCloseBehavior.exitApplication,
+            groupValue: preferences.windowCloseBehavior,
+            title: const Text('Exit application'),
+            onChanged: (value) => controller.setWindowCloseBehavior(value!),
+          ),
+          RadioListTile(
+            value: WindowCloseBehavior.hideToTray,
+            groupValue: preferences.windowCloseBehavior,
+            title: const Text('Hide to tray'),
+            onChanged: (value) => controller.setWindowCloseBehavior(value!),
+          ),
+          const Divider(),
           ListTile(
             title: const Text('Music folders'),
             subtitle: const Text('Manage local folders used by the library'),
@@ -183,7 +197,7 @@ class SettingsPage extends ConsumerWidget {
           const ListTile(
             title: Text('About'),
             subtitle: Text(
-              'MpvPlay\nVersion 0.5.0\nWindows desktop music player',
+              'MpvPlay\nVersion 0.6.0\nWindows desktop music player',
             ),
           ),
         ],
