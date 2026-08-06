@@ -11,6 +11,10 @@
 - Release：`apps/player_app/build/windows/x64/runner/Release`
 - Release exe SHA-256：`D9DC245FE1DC727071117D9B42EB1BD68CBAC93CFE50CD6C3F3B9AC1C01CE60F`
 
+自动检查：Release 进程启动成功，退出后 `Get-Process mpv_play` 为空。
+本次未加载曲目；系统媒体面板、硬件媒体键和托盘视觉项目保持
+`NOT_TESTED`，系统 Seek 为 `NOT_SUPPORTED`。
+
 - Windows 版本：
 - Flutter/Dart 版本：
 - 应用版本：0.6.0+7
