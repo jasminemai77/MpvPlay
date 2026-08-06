@@ -18,3 +18,5 @@ Release SHA-256: `D9DC245FE1DC727071117D9B42EB1BD68CBAC93CFE50CD6C3F3B9AC1C01CE6
 passed with exit code 0. SMTC hardware/media-panel and tray visual checks are
 recorded as `NOT_TESTED` in `manual-windows-smoke.md`; system seek is
 `NOT_SUPPORTED` by design.
+
+Final Gate: `ACCEPTED_WITH_RISK`.
