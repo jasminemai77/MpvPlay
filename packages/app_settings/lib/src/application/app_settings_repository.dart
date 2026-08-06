@@ -8,6 +8,7 @@ abstract interface class AppSettingsRepository {
   Future<void> setTheme(AppThemePreference theme);
   Future<void> setScanOnStartup(bool enabled);
   Future<void> setScanNewRootsImmediately(bool enabled);
+  Future<void> setWindowCloseBehavior(WindowCloseBehavior behavior);
   Future<void> resetToDefaults();
   Future<void> close();
 }

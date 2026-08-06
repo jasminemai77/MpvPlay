@@ -4,10 +4,14 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   media_kit_libs_windows_audio
+  screen_retriever_windows
+  tray_manager
+  window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
   jni
+  smtc_windows
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

@@ -20,5 +20,7 @@ final class SettingsController {
       _repository.setScanOnStartup(value);
   Future<void> setScanNewRootsImmediately(bool value) =>
       _repository.setScanNewRootsImmediately(value);
+  Future<void> setWindowCloseBehavior(WindowCloseBehavior value) =>
+      _repository.setWindowCloseBehavior(value);
   Future<void> reset() => _repository.resetToDefaults();
 }
