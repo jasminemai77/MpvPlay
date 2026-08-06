@@ -20,3 +20,6 @@ recorded as `NOT_TESTED` in `manual-windows-smoke.md`; system seek is
 `NOT_SUPPORTED` by design.
 
 Final Gate: `ACCEPTED_WITH_RISK`.
+
+Final CI: Run `31074125806`; Artifact ID `8956939562`; size `21,992,077`
+bytes; SHA-256 `071dad74ff50d5743bd8c0f22d3ec083b480765c768520f291652cfb03abefdc`.
